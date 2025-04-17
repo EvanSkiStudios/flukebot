@@ -18,7 +18,7 @@ BOT_SERVER_ID = os.getenv("SERVER_ID")
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(intents=intents)
+client = discord.Client(command_prefix="$", intents=intents)
 
 
 @client.event
@@ -27,7 +27,7 @@ async def on_ready():
     print(f'We have logged in as {client.user}')
 
 
-async def fetch_message(message_reference):
+async def fetch_discord_message(message_reference):
     # unpack tuple ref
     guild_id, channel_id, message_id = message_reference
 
@@ -35,6 +35,7 @@ async def fetch_message(message_reference):
     message = await channel.fetch_message(message_id)
 
     return message
+
 
 # very basic message detection
 @client.event
