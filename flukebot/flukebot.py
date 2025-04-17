@@ -27,10 +27,23 @@ async def on_ready():
     print(f'We have logged in as {client.user}')
 
 
+async def fetch_message(message_reference):
+    # unpack tuple ref
+    guild_id, channel_id, message_id = message_reference
+
+    channel = await client.fetch_channel(channel_id)
+    message = await channel.fetch_message(message_id)
+
+    return message
+
 # very basic message detection
 @client.event
 async def on_message(message):
-    # print(message.content)
+    # print(f' RECEIVED MESSAGE: {message}')
+
+    # pack message content into tuple ref, to use later
+    guild_id, channel_id, message_id = map(str, [message.author.guild.id, message.channel.id, message.id])
+    message_channel_reference = (guild_id, channel_id, message_id)
 
     message_lower = message.content.lower()
 
@@ -40,7 +53,7 @@ async def on_message(message):
     if message.mention_everyone:
         return
 
-    # replying to EvanJelly directly
+    # replying to bot directly
     if message.reference:
         referenced_message = await message.channel.fetch_message(message.reference.message_id)
         if referenced_message.author == client.user:
@@ -59,11 +72,12 @@ async def on_message(message):
             await message.channel.send('Im powered by snakes! :snake:')
             return
 
-    # command but not really all that nessacery with above
+    # command but not really all that necessary with above
     if message.content.startswith('$hello'):
         await message.channel.send('Hello!')
         return
 
+    # basic command, if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
         LLMResponse = "" + LLMConverse(message.author.name, message.content.lower())
 
