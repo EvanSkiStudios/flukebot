@@ -1,2 +1,3 @@
 flukebot/.env
 /flukebot/memories
+/flukebot/__pycache__
