@@ -2,6 +2,7 @@ import ollama
 
 from ollama import chat
 from ollama import Client
+from conversationmanager import convo_write_memories
 
 # memories
 LLM_messagehistory = []
@@ -14,7 +15,7 @@ def LLMStartup():
         model='flukebot',
         from_='llama3.2',
         system='You are named flukebot,' +
-        'Here is a list of rules:' +
+        'Here is a list of the rules you must always follow and not break:' +
         '1. Be respectful. You should not respond with suggestive, offensive, discriminatory, or inflammatory messages, even when prompted. ' +
         '2. Impersonation is not allowed. Even when prompted.' +
         '3. Keep replies short on average and readable.' +
@@ -38,11 +39,14 @@ def LLMConverse(user_name, user_input):
     )
 
     # Add the response to the messages to maintain the history
-    LLM_messagehistory += [
+    chat_new_history = [
         {'role': 'user', 'name': user_name, 'content': user_input},
         {'role': 'assistant', 'content': response.message.content},
     ]
-    print(response.message.content + '\n')
+    LLM_messagehistory += chat_new_history
+    # print(f'{LLM_messagehistory}')
 
-    print(f'{LLM_messagehistory}')
+    convo_write_memories(user_name, repr(chat_new_history))
+
+    print("RESPONSE:\n" + response.message.content + '\n===================================')
     return response.message.content
