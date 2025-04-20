@@ -1,7 +1,11 @@
 import os
 import discord
 
+from discord.ext import commands
+# from discord.ext.commands import Bot
+
 from dotenv import load_dotenv
+
 from ollamaherder import LLMStartup
 from ollamaherder import LLMConverse
 
@@ -18,13 +22,37 @@ BOT_SERVER_ID = os.getenv("SERVER_ID")
 intents = discord.Intents.default()
 intents.message_content = True
 
-client = discord.Client(command_prefix="$", intents=intents)
+# client = discord.Client(intents=intents)
+client = commands.Bot(command_prefix="$fb ", intents=intents)
+
+
+class MyHelpCommand(commands.HelpCommand):
+    async def send_bot_help(self, mapping):
+        help_message = """
+        For Full documentation see: [The Github Repo](https://github.com/EvanSkiStudios/flukebot)\n
+        Commands are prefixed with "$fb "\n
+        ```Here are my commands:\n"
+        """
+        for cog, commands_list in mapping.items():
+            for command in commands_list:
+                help_message += f"`{command.name}` - {command.help or 'No description'}\n"
+        help_message += "```"
+        await self.get_destination().send(help_message)
+
+
+# Then assign it to your bot
+client.help_command = MyHelpCommand()
 
 
 @client.event
 async def on_ready():
     # When the bot has logged in, call back
     print(f'We have logged in as {client.user}')
+
+
+@client.command(help="Replies with pong.")
+async def ping(ctx):
+    await ctx.send("pong")
 
 
 async def fetch_discord_message(message_reference):
@@ -36,10 +64,10 @@ async def fetch_discord_message(message_reference):
 
     return message
 
-
-# very basic message detection
 @client.event
 async def on_message(message):
+    await client.process_commands(message)  # This line is required!
+
     # print(f' RECEIVED MESSAGE: {message}')
 
     # pack message content into tuple ref, to use later
@@ -47,6 +75,8 @@ async def on_message(message):
     message_channel_reference = (guild_id, channel_id, message_id)
 
     message_lower = message.content.lower()
+
+    # TODO-- ignore discussion thread of main bot-arena channel
 
     if message.author == client.user:
         return
