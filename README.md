@@ -1,8 +1,12 @@
 # flukebot
- A joke bot used for a "bot arena" in a friend group discord
- The persona is meant to be a rival of [Mercerenies'](https://github.com/Mercerenies) [LuckBot](https://github.com/Mercerenies/luckbot)
+ A joke bot used for a "bot arena" in a friend group discord  
+ The persona is meant to be a rival of [Mercerenies'](https://github.com/Mercerenies) [LuckBot](https://github.com/Mercerenies/luckbot)  
  
- Flukebot uses a LLM to converse with users, as well as has discord bot commands for controlling its memories and toggling certian actions
+ Flukebot uses a Ollama AI to converse with users, as well as has discord bot commands for controlling its memories and toggling certian actions
+ 
+ This bot is available under the [MIT License](LICENSE.txt).  
+ With the following Additional condition:  
+ This software may not be used for commercial purposes without explicit permission from the author.   
  
  ### Useage
  Flukebot will speak to you if you direct your message at the bot by a reply or by direct name dropping
