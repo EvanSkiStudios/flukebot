@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from dotenv import load_dotenv
 
+from LongTermMemory import convo_delete_history
 from ollamaherder import LLMStartup
 from ollamaherder import LLMConverse
 
@@ -64,6 +65,25 @@ async def changestatus(ctx):
     print(f"Changed Status to: {new_activity_status}")
 
     await ctx.send("Changed Status")
+
+
+@client.command(help="Removes all Conversation History between you and FlukeBot")
+async def clearhistory(ctx):
+    print(f"Command issued: clearhistory")
+    user = ctx.author.name
+
+    outcome = convo_delete_history(user)
+    outcome_message = "Unknown Error, Try again later!"
+
+    if outcome == 1:
+        print(f"Deleted Conversation history for {user}")
+        outcome_message = f"Deleted Conversation history for {user}"
+
+    if outcome == -1:
+        print(f"No Conversation history for {user}")
+        outcome_message = f"No Conversation history for {user}"
+
+    await ctx.send(outcome_message)
 
 
 @client.event

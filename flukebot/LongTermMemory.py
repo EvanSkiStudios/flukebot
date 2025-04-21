@@ -20,6 +20,14 @@ memories_location = str(running_dir) + "/memories/"
 # "a" - Append - will append to the end of the file
 # "w" - Write - will overwrite any existing content
 
+def convo_delete_history(username):
+    user_conversation_memory_file = memories_location + f"{username}.json"
+
+    if os.path.exists(user_conversation_memory_file):
+        os.remove(user_conversation_memory_file)
+        return 1
+    else:
+        return -1
 
 def convo_write_memories(username, conversation_data, message_channel_reference):
     user_conversation_memory_file = memories_location + f"{username}.json"
