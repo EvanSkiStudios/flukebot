@@ -2,7 +2,6 @@ import os
 import discord
 
 from discord.ext import commands
-# from discord.ext.commands import Bot
 
 from dotenv import load_dotenv
 
@@ -53,11 +52,6 @@ client.help_command = MyHelpCommand()
 async def on_ready():
     # When the bot has logged in, call back
     print(f'We have logged in as {client.user}')
-
-
-@client.command(help="Replies with pong.")
-async def ping(ctx):
-    await ctx.send("pong")
 
 
 @client.command(help="Changes Status Presence")
@@ -114,7 +108,7 @@ async def on_message(message):
 
     # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
-        LLMResponse = "" + LLMConverse(message.author.name, message.content.lower())
+        LLMResponse = "" + LLMConverse(client, message.author.name, message.content.lower(), message_channel_reference)
 
         response = "" + LLMResponse.replace("'", "\'")
 

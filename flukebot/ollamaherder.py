@@ -2,13 +2,14 @@ import ollama
 
 from ollama import chat
 from ollama import Client
-from conversationmanager import convo_write_memories
+from LongTermMemory import convo_write_memories, memory_fetch_user_conversations
 
 # memories
-LLM_messagehistory = []
+LLM_Current_Conversation_History = []
+
 
 def LLMStartup():
-    global LLM_messagehistory
+    global LLM_Current_Conversation_History
 
     client = Client()
     response = client.create(
@@ -25,15 +26,19 @@ Here is a list of the rules you must always follow and not break:
         stream=False,
     )
     print(f"# Client: {response.status}")
-    return LLM_messagehistory
+    return LLM_Current_Conversation_History
 
 
-def LLMConverse(user_name, user_input):
-    global LLM_messagehistory
+def LLMConverse(client, user_name, user_input, message_channel_reference):
+    global LLM_Current_Conversation_History
+
+    # todo check who we are currently talking too - if someone new is talking to us, fetch their memories
+    # todo if its a different user, cache the current history to file the swap out the memories
+    # user_convo_history = memory_fetch_user_conversations(client, user_name)
 
     response = chat(
         model='flukebot',
-        messages=LLM_messagehistory + [
+        messages=LLM_Current_Conversation_History + [
             {'role': 'user', 'name': user_name, 'content': user_input},
         ],
     )
@@ -43,11 +48,10 @@ def LLMConverse(user_name, user_input):
         {'role': 'user', 'name': user_name, 'content': user_input},
         {'role': 'assistant', 'content': response.message.content},
     ]
-    LLM_messagehistory += chat_new_history
-    # print(f'{LLM_messagehistory}')
+    LLM_Current_Conversation_History += chat_new_history
 
-    # manage memories
-    convo_write_memories(user_name, repr(chat_new_history))
+    # Append the url reference of the memory to file
+    convo_write_memories(user_name, chat_new_history, message_channel_reference)
 
     # Debug Console Output
     print("\n===================================\n")
