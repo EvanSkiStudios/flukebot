@@ -35,6 +35,9 @@ def convo_write_memories(username, conversation_data, message_channel_reference)
     # unpack tuple ref
     guild_id, channel_id, message_id = message_channel_reference
 
+    user_message_info = {"channel_id": channel_id, "message_id": message_id}
+    conversation_data[0]["content"] = str(user_message_info)
+
     if os.path.exists(user_conversation_memory_file):
 
         # Step 1: Read the original JSON file
@@ -62,6 +65,10 @@ def convo_write_memories(username, conversation_data, message_channel_reference)
 def memory_fetch_user_conversations(client, username):
     # todo get conversation history and convert it with fetch conversation
     # fetch_discord_message
+
+    # If the message was deleted, you'll get a discord.NotFound error.
+
+    # If the bot lacks permissions, you might get a discord.Forbidden error.
 
     f = open(memories_location + f"{username}.txt", "r")
     message_history_references = f.read()
