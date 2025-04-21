@@ -128,9 +128,10 @@ async def on_message(message):
 
     # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
-        LLMResponse = "" + LLMConverse(client, message.author.name, message.content.lower(), message_channel_reference)
 
-        response = "" + LLMResponse.replace("'", "\'")
+        LLMResponse = await LLMConverse(client, message.author.name, message.content.lower(), message_channel_reference)
+
+        response = LLMResponse.replace("'", "\'")
 
         await message.channel.send(response)
         return

@@ -1,24 +1,12 @@
 import os
 import json
-
-
-async def fetch_discord_message(client, message_reference):
-    # unpack tuple ref
-    guild_id, channel_id, message_id = message_reference
-
-    channel = await client.fetch_channel(channel_id)
-    message = await channel.fetch_message(message_id)
-
-    return message
+import discord
 
 
 # get location of memories
 running_dir = os.path.dirname(os.path.realpath(__file__))
 memories_location = str(running_dir) + "/memories/"
 
-
-# "a" - Append - will append to the end of the file
-# "w" - Write - will overwrite any existing content
 
 def convo_delete_history(username):
     user_conversation_memory_file = memories_location + f"{username}.json"
@@ -28,6 +16,7 @@ def convo_delete_history(username):
         return 1
     else:
         return -1
+
 
 def convo_write_memories(username, conversation_data, message_channel_reference):
     user_conversation_memory_file = memories_location + f"{username}.json"
@@ -39,36 +28,83 @@ def convo_write_memories(username, conversation_data, message_channel_reference)
     conversation_data[0]["content"] = str(user_message_info)
 
     if os.path.exists(user_conversation_memory_file):
+        print(f"☁️ Memories found for: {username}")
 
         # Step 1: Read the original JSON file
         with open(user_conversation_memory_file, "r") as f:
-            message_history_references = json.load(f)  # This gives you a list or dict depending on your file
+            message_history_references = json.load(f)  # Loads existing list
 
         # Step 2: Append new info
-        message_history_references.extend(conversation_data)  # Adds each item individually
+        message_history_references.extend(conversation_data)
+        print(f"Memories: {message_history_references}")
 
-        # Step 3: Clear the original file (optional)
+        # Step 3: Save the updated data back to the same file
         with open(user_conversation_memory_file, "w") as f:
-            f.truncate()  # Clears the file contents
+            json.dump(message_history_references, f, indent=4)  # Pretty print is optional
 
-        # Step 4: Save the updated data to a new file
-        with open(user_conversation_memory_file, "w") as f:
-            json.dump(message_history_references, f)
-        f.close()
+        print(f"✅ Memories Saved")
 
     else:
+        print(f"⚠️ Creating New Memories for: {username}")
         with open(user_conversation_memory_file, "w") as f:
             json.dump(conversation_data, f)
         f.close()
 
 
-def memory_fetch_user_conversations(client, username):
-    # todo get conversation history and convert it with fetch conversation
-    # fetch_discord_message
+async def fetch_discord_message(client, message_reference):
+    # unpack tuple ref
+    channel_id, message_id = message_reference
+    try:
+        channel = await client.fetch_channel(channel_id)
+        message = await channel.fetch_message(message_id)
+        return message.content.lower()
 
-    # If the message was deleted, you'll get a discord.NotFound error.
+    except discord.NotFound:
+        print(f"❌ Message {message_id} or channel not found. Skipping")
+    except discord.Forbidden:
+        print(f"🚫 Bot doesn't have permission to access the channel or  {message_id}.")
+    except discord.HTTPException as e:
+        print(f"⚠️ A general HTTP error occurred: {e}")
 
-    # If the bot lacks permissions, you might get a discord.Forbidden error.
+    return -1  # Return None if message couldn't be fetched
 
-    f = open(memories_location + f"{username}.txt", "r")
-    message_history_references = f.read()
+
+async def memory_fetch_user_conversations(client, username, llm_current_chatter, current_llm_history, message_channel_reference):
+    if llm_current_chatter is not None:
+        convo_write_memories(username, current_llm_history, message_channel_reference)
+
+    # check if new user already has history
+    user_conversation_memory_file = memories_location + f"{username}.json"
+    if os.path.exists(user_conversation_memory_file):
+        with open(user_conversation_memory_file, "r") as f:
+            message_history_references = json.load(f)
+
+        for (key, item) in enumerate(message_history_references):
+            print(f"GETTING MEMORY:\n{key}\n{item}\n")
+
+            if item["role"] == "user":
+                # print(f"MEMORY IS USER:\n{key}\n{item}\n")
+
+                # Extract the necessary values
+                # the dict is stored as a string, so we need to convert it back to a dict
+                fixed_content = item["content"].replace("'", '"')
+                item["content"] = json.loads(fixed_content)
+
+                channel_id, message_id = map(str, [item["content"]["channel_id"], item["content"]["message_id"]])
+                message_reference = (channel_id, message_id)
+
+                # Fetch the message from Discord
+                fetched_message = await fetch_discord_message(client, message_reference)
+
+                # Check if the fetch was successful (assuming -1 means failure)
+                if fetched_message != -1:
+                    # Replace the content in the original dictionary
+                    item["content"] = fetched_message
+
+                    # Optionally, update the dictionary with the new value if you want to keep the reference
+                    message_history_references[key] = item
+        return message_history_references
+
+    else:
+        return []
+    # if no history file just return an empty list
