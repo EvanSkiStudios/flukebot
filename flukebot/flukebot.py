@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from ollamaherder import LLMStartup
 from ollamaherder import LLMConverse
 
+from Utility import set_activity
+
 # Startup LLM
 LLMStartup()
 
@@ -17,24 +19,27 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TOKEN")
 BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
 BOT_SERVER_ID = os.getenv("SERVER_ID")
+GMC_DISCUSSION_THREAD = os.getenv("GMCD_Discussion_Thread_ID")
 
 # set discord intents
 intents = discord.Intents.default()
 intents.message_content = True
 
+activity_status = set_activity()
+
 # client = discord.Client(intents=intents)
-client = commands.Bot(command_prefix="$fb ", intents=intents)
+client = commands.Bot(command_prefix="$fb ", intents=intents, activity=activity_status, status=discord.Status.online)
 
 
 class MyHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         help_message = """
-        For Full documentation see: [The Github Repo](https://github.com/EvanSkiStudios/flukebot)\n
-        Commands are prefixed with "$fb "\n
-        ```Here are my commands:\n"
-        """
+For Full documentation see: [The Github Repo](<https://github.com/EvanSkiStudios/flukebot>)
+Commands are issued like so: `$fb <command>`
+```Here are my commands:
+"""
         for cog, commands_list in mapping.items():
-            for command in commands_list:
+            for command in reversed(commands_list):
                 help_message += f"`{command.name}` - {command.help or 'No description'}\n"
         help_message += "```"
         await self.get_destination().send(help_message)
@@ -55,14 +60,17 @@ async def ping(ctx):
     await ctx.send("pong")
 
 
-async def fetch_discord_message(message_reference):
-    # unpack tuple ref
-    guild_id, channel_id, message_id = message_reference
+@client.command(help="Changes Status Presence")
+async def changestatus(ctx):
+    print(f"Command issued: Change Status")
 
-    channel = await client.fetch_channel(channel_id)
-    message = await channel.fetch_message(message_id)
+    new_activity_status = set_activity()
+    await client.change_presence(activity=new_activity_status)
 
-    return message
+    print(f"Changed Status to: {new_activity_status}")
+
+    await ctx.send("Changed Status")
+
 
 @client.event
 async def on_message(message):
@@ -76,12 +84,13 @@ async def on_message(message):
 
     message_lower = message.content.lower()
 
-    # TODO-- ignore discussion thread of main bot-arena channel
-
     if message.author == client.user:
         return
 
     if message.mention_everyone:
+        return
+
+    if message.channel.id == GMC_DISCUSSION_THREAD:
         return
 
     # replying to bot directly
@@ -103,12 +112,7 @@ async def on_message(message):
             await message.channel.send('Im powered by snakes! :snake:')
             return
 
-    # command but not really all that necessary with above
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
-        return
-
-    # basic command, if the message includes "flukebot" it will trigger and run the code
+    # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
         LLMResponse = "" + LLMConverse(message.author.name, message.content.lower())
 
@@ -119,5 +123,4 @@ async def on_message(message):
 
 # Login
 client.run(BOT_TOKEN)
-
 
