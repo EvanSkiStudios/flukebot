@@ -1,5 +1,9 @@
 import os
+import sys
+
 import discord
+
+import error_handler
 
 from discord.ext import commands
 
@@ -11,7 +15,6 @@ from ollamaherder import LLMConverse
 
 from Utility import set_activity
 
-# TODO - Create a Error handler so the bot doesnt just silently crash and the discord bot stays online
 
 # Startup LLM
 LLMStartup()
@@ -55,6 +58,16 @@ client.help_command = MyHelpCommand()
 async def on_ready():
     # When the bot has logged in, call back
     print(f'We have logged in as {client.user}')
+
+
+@client.event
+async def on_disconnect():
+    print(f"{client.user} disconnected!")
+
+
+@client.event
+async def on_close():
+    print(f"{client.user} closed!")
 
 
 @client.command(help="Changes Status Presence")
@@ -124,12 +137,6 @@ async def on_message(message):
         await message.channel.send('Ping Pong!')
         return
 
-    # test of general message getting
-    if message_lower.find('evanjelly') != -1:
-        if message.content.lower().find('language') != -1:
-            await message.channel.send('Im powered by snakes! :snake:')
-            return
-
     # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
 
@@ -142,4 +149,5 @@ async def on_message(message):
 
 # Login
 client.run(BOT_TOKEN)
+
 

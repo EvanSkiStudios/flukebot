@@ -1,5 +1,7 @@
 import ollama
 
+import error_handler
+
 from ollama import chat
 from ollama import Client
 from LongTermMemory import convo_write_memories, memory_fetch_user_conversations

@@ -2,6 +2,8 @@ import os
 import json
 import discord
 
+import error_handler
+
 
 # get location of memories
 running_dir = os.path.dirname(os.path.realpath(__file__))
@@ -36,7 +38,7 @@ def convo_write_memories(username, conversation_data, message_channel_reference)
 
         # Step 2: Append new info
         message_history_references.extend(conversation_data)
-        print(f"Memories: {message_history_references}")
+        # print(f"Memories: {message_history_references}")
 
         # Step 3: Save the updated data back to the same file
         with open(user_conversation_memory_file, "w") as f:
@@ -80,7 +82,8 @@ async def memory_fetch_user_conversations(client, username, llm_current_chatter,
             message_history_references = json.load(f)
 
         for (key, item) in enumerate(message_history_references):
-            print(f"GETTING MEMORY:\n{key}\n{item}\n")
+            # print(f"GETTING MEMORY:\n{key}\n{item}\n")
+            print(f"GETTING MEMORY: {key}")
 
             if item["role"] == "user":
                 # print(f"MEMORY IS USER:\n{key}\n{item}\n")
