@@ -11,6 +11,8 @@ from ollamaherder import LLMConverse
 
 from Utility import set_activity
 
+# TODO - Create a Error handler so the bot doesnt just silently crash and the discord bot stays online
+
 # Startup LLM
 LLMStartup()
 
@@ -106,6 +108,8 @@ async def on_message(message):
 
     if message.channel.id == GMC_DISCUSSION_THREAD:
         return
+
+    # TODO - Wire replying and pinging the bot to be considered speaking to it and wanting the LLM
 
     # replying to bot directly
     if message.reference:
