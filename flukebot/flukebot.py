@@ -24,7 +24,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TOKEN")
 BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
 BOT_SERVER_ID = os.getenv("SERVER_ID")
-GMC_DISCUSSION_THREAD = os.getenv("GMCD_Discussion_Thread_ID")
+GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD")
 
 # set discord intents
 intents = discord.Intents.default()
@@ -105,6 +105,7 @@ async def clearhistory(ctx):
 async def on_message(message):
     await client.process_commands(message)  # This line is required!
 
+    # print(f'{message.channel.id}')
     # print(f' RECEIVED MESSAGE: {message}')
 
     # pack message content into tuple ref, to use later
@@ -119,7 +120,7 @@ async def on_message(message):
     if message.mention_everyone:
         return
 
-    if message.channel.id == GMC_DISCUSSION_THREAD:
+    if str(message.channel.id) == GMC_DISCUSSION_THREAD:
         return
 
     # TODO - Wire replying and pinging the bot to be considered speaking to it and wanting the LLM
