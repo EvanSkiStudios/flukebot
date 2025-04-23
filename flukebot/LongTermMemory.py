@@ -2,8 +2,6 @@ import os
 import json
 import discord
 
-import error_handler
-
 
 # get location of memories
 running_dir = os.path.dirname(os.path.realpath(__file__))

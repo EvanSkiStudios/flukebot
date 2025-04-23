@@ -1,6 +1,5 @@
 import ollama
 
-import error_handler
 
 from ollama import chat
 from ollama import Client

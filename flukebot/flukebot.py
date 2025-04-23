@@ -3,8 +3,6 @@ import sys
 
 import discord
 
-import error_handler
-
 from discord.ext import commands
 
 from dotenv import load_dotenv
@@ -103,8 +101,10 @@ async def clearhistory(ctx):
 
 async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
     LLMResponse = await LLMConverse(bot_client, message_author_name, message_content, message_channel_reference)
-    response = LLMResponse.replace("'", "\'")
-    response = LLMResponse.replace("evanski_", "Evanski")
+    response = (LLMResponse
+                .replace("'", "\'")
+                .replace("evanski_", "Evanski")
+                )
     return response
 
 
@@ -136,7 +136,9 @@ async def on_message(message):
     if message.reference:
         referenced_message = await message.channel.fetch_message(message.reference.message_id)
         if referenced_message.author == client.user:
-            response = await ollama_response(client, message.author.name, message.content.lower(),
+            message_content = message.content.lower()
+            
+            response = await ollama_response(client, message.author.name, message_content,
                                              message_channel_reference)
 
             await message.channel.send(response)
