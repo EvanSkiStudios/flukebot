@@ -101,6 +101,13 @@ async def clearhistory(ctx):
     await ctx.send(outcome_message)
 
 
+async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
+    LLMResponse = await LLMConverse(bot_client, message_author_name, message_content, message_channel_reference)
+    response = LLMResponse.replace("'", "\'")
+    response = LLMResponse.replace("evanski_", "Evanski")
+    return response
+
+
 @client.event
 async def on_message(message):
     await client.process_commands(message)  # This line is required!
@@ -123,27 +130,35 @@ async def on_message(message):
     if str(message.channel.id) == GMC_DISCUSSION_THREAD:
         return
 
-    # TODO - Wire replying and pinging the bot to be considered speaking to it and wanting the LLM
+    # if message.author.bot:
 
     # replying to bot directly
     if message.reference:
         referenced_message = await message.channel.fetch_message(message.reference.message_id)
         if referenced_message.author == client.user:
-            # We have confirmed the replayed to message is from EvanJelly
-            await message.channel.send('Test reply successful')
+            response = await ollama_response(client, message.author.name, message.content.lower(),
+                                             message_channel_reference)
+
+            await message.channel.send(response)
             return
 
     # Pinging the bot
     if message_lower.find("@" + str(BOT_APPLICATION_ID)) != -1:
-        await message.channel.send('Ping Pong!')
+        message_content = message.content.lower()
+        message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
+
+        response = await ollama_response(client, message.author.name, message_content,
+                                         message_channel_reference)
+
+        await message.channel.send(response)
         return
 
     # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
+        message_content = message.content.lower()
 
-        LLMResponse = await LLMConverse(client, message.author.name, message.content.lower(), message_channel_reference)
-
-        response = LLMResponse.replace("'", "\'")
+        response = await ollama_response(client, message.author.name, message_content,
+                                         message_channel_reference)
 
         await message.channel.send(response)
         return

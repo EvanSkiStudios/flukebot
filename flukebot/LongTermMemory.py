@@ -73,10 +73,6 @@ async def fetch_discord_message(client, message_reference):
 
 async def memory_fetch_user_conversations(client, username, llm_current_chatter, current_llm_history, message_channel_reference):
 
-    # This actually is not needed, seems to do fine without it, infact removing this solves a few issues
-    # if llm_current_chatter is not None:
-        # convo_write_memories(llm_current_chatter, current_llm_history, message_channel_reference)
-
     # check if new user already has history
     user_conversation_memory_file = memories_location + f"{username}.json"
     if os.path.exists(user_conversation_memory_file):
