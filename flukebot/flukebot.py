@@ -11,7 +11,7 @@ from LongTermMemory import convo_delete_history
 from ollamaherder import LLMStartup
 from ollamaherder import LLMConverse
 
-from Utility import set_activity
+from Utility import set_activity, split_response
 
 
 # Startup LLM
@@ -61,6 +61,15 @@ async def on_ready():
 @client.event
 async def on_disconnect():
     print(f"{client.user} disconnected!")
+    new_status = discord.Status.idle
+    await client.change_presence(status=new_status)
+
+
+@client.event
+async def on_connect():
+    activity_status = set_activity()
+    new_status = discord.Status.online
+    await client.change_presence(activity=activity_status, status=new_status)
 
 
 @client.event
@@ -96,7 +105,7 @@ async def clearhistory(ctx):
         print(f"No Conversation history for {user}")
         outcome_message = f"No Conversation history for {user}"
 
-    await ctx.send(outcome_message)
+    await ctx.send(outcome_message, ephemeral=True)
 
 
 async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
@@ -104,7 +113,15 @@ async def ollama_response(bot_client, message_author_name, message_content, mess
     response = (LLMResponse
                 .replace("'", "\'")
                 .replace("evanski_", "Evanski")
+                .replace("Evanski_", "Evanski")
                 )
+
+    # discord message limit
+    if len(response) > 2000:
+        response = split_response(response)
+    else:
+        response = [response]
+
     return response
 
 
@@ -130,6 +147,7 @@ async def on_message(message):
     if str(message.channel.id) == GMC_DISCUSSION_THREAD:
         return
 
+
     # if message.author.bot:
 
     # replying to bot directly
@@ -137,11 +155,15 @@ async def on_message(message):
         referenced_message = await message.channel.fetch_message(message.reference.message_id)
         if referenced_message.author == client.user:
             message_content = message.content.lower()
-            
-            response = await ollama_response(client, message.author.name, message_content,
-                                             message_channel_reference)
+            message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
 
-            await message.channel.send(response)
+            async with message.channel.typing(): # displays "is typing" status
+                response = await ollama_response(client, message.author.name, message_content,
+                                                 message_channel_reference)
+
+            for i, part in enumerate(response):
+                await message.channel.send(part)
+
             return
 
     # Pinging the bot
@@ -149,20 +171,26 @@ async def on_message(message):
         message_content = message.content.lower()
         message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
 
-        response = await ollama_response(client, message.author.name, message_content,
-                                         message_channel_reference)
+        async with message.channel.typing():
+            response = await ollama_response(client, message.author.name, message_content,
+                                             message_channel_reference)
 
-        await message.channel.send(response)
+        for i, part in enumerate(response):
+            await message.channel.send(part)
+
         return
 
     # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
         message_content = message.content.lower()
 
-        response = await ollama_response(client, message.author.name, message_content,
-                                         message_channel_reference)
+        async with message.channel.typing():
+            response = await ollama_response(client, message.author.name, message_content,
+                                             message_channel_reference)
 
-        await message.channel.send(response)
+        for i, part in enumerate(response):
+            await message.channel.send(part)
+
         return
 
 # Login
