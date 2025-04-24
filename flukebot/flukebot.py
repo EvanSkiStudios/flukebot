@@ -1,5 +1,4 @@
 import os
-import sys
 
 import discord
 
@@ -7,15 +6,16 @@ from discord.ext import commands
 
 from dotenv import load_dotenv
 
-from LongTermMemory import convo_delete_history
+from long_term_memory import convo_delete_history
 from ollamaherder import LLMStartup
 from ollamaherder import LLMConverse
 
-from Utility import set_activity, split_response
+from utility import set_activity, split_response
 
 
 # Startup LLM
 LLMStartup()
+
 
 # Load Env
 load_dotenv()
@@ -61,8 +61,6 @@ async def on_ready():
 @client.event
 async def on_disconnect():
     print(f"{client.user} disconnected!")
-    new_status = discord.Status.idle
-    await client.change_presence(status=new_status)
 
 
 @client.event
@@ -109,6 +107,7 @@ async def clearhistory(ctx):
 
 
 async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
+
     LLMResponse = await LLMConverse(bot_client, message_author_name, message_content, message_channel_reference)
     response = (LLMResponse
                 .replace("'", "\'")
