@@ -12,7 +12,6 @@ flukebot_rules = flukebot_personality
 LLM_current_chatter = None
 LLM_Current_Conversation_History = []
 
-
 def LLMStartup():
     global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules
 

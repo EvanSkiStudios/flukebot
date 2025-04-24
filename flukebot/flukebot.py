@@ -105,7 +105,7 @@ async def clearhistory(ctx):
         print(f"No Conversation history for {user}")
         outcome_message = f"No Conversation history for {user}"
 
-    await ctx.send(outcome_message, ephemeral=True)
+    await ctx.send(outcome_message)
 
 
 async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
