@@ -2,3 +2,4 @@ discord~=2.3.2
 dotenv~=0.9.9
 python-dotenv~=1.1.0
 ollama~=0.4.7
+requests~=2.32.3

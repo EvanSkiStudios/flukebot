@@ -8,6 +8,8 @@ from ollama import Client
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations
 
+from flukebot_tools import google_search_tool
+
 flukebot_rules = flukebot_personality
 
 # memories
@@ -81,8 +83,9 @@ and not some other entity called flukebot.
                       }
                  ] + LLM_Current_Conversation_History + [
                      {'role': 'user', 'name': user_name, 'content': user_input},
-                 ],
+                 ]
     )
+    # TODO - look into why adding TOOLS cause him to never respond
 
     # Add the response to the messages to maintain the history
     chat_new_history = [
