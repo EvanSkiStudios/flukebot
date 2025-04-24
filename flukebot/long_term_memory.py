@@ -77,9 +77,10 @@ async def memory_fetch_user_conversations(client, username, llm_current_chatter,
         with open(user_conversation_memory_file, "r") as f:
             message_history_references = json.load(f)
 
+        total_keys = len(message_history_references)
         for (key, item) in enumerate(message_history_references):
-            print(f"GETTING MEMORY: {key} \n{key}\n{item}\n")
-            # print(f"GETTING MEMORY: {key}")
+            # print(f"GETTING MEMORY: {key} \n{key}\n{item}\n")
+            print(f"GETTING MEMORY: {key} / {total_keys}")
 
             if item["role"] == "user":
                 # print(f"MEMORY IS USER:\n{key}\n{item}\n")

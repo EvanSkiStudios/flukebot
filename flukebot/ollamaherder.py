@@ -38,17 +38,17 @@ async def LLMConverse(client, user_name, user_input, message_channel_reference):
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
     # if it's a different user, cache the current history to file the swap out the memories
     if user_name != LLM_current_chatter:
-        print(f"SWITCHING CONVERSER FROM {LLM_current_chatter} > {user_name}")
+        print(f"⚠️ SWITCHING CONVERSER FROM {LLM_current_chatter} > {user_name}")
 
         # search through memory cache for user
-        print(f"{LLM_memory_cache}")
+        # print(f"{LLM_memory_cache}")
 
         # Loop through and check for the user
         found_user_cache = False
         if str(user_name) in LLM_memory_cache:
             json_string = LLM_memory_cache[str(user_name)]
             data = json.loads(json_string)
-            print(f"\n\n\nFOUND USER CACHE\n\n\n{data}\n\n\n")
+            print(f"✅ FOUND USER CACHE FOR {user_name}")
             found_user_cache = True
             user_convo_history = data
 
@@ -105,7 +105,7 @@ and not some other entity called flukebot.
     # add chat to memory cache
     json_string = json.dumps(LLM_Current_Conversation_History)
     LLM_memory_cache[user_name] = json_string
-    print(f"{LLM_memory_cache}")
+    # print(f"{LLM_memory_cache}")
 
     # Append the url reference of the memory to file
     convo_write_memories(user_name, chat_new_history, message_channel_reference)
