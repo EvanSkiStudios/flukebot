@@ -10,7 +10,7 @@ memories_location = str(running_dir) + "/memories/"
 
 
 def convo_delete_history(username):
-    user_conversation_memory_file = memories_location + f"{username}.json"
+    user_conversation_memory_file = os.path.join(memories_location, f"{username}.json")
 
     if os.path.exists(user_conversation_memory_file):
         os.remove(user_conversation_memory_file)
@@ -20,7 +20,7 @@ def convo_delete_history(username):
 
 
 def convo_write_memories(username, conversation_data, message_channel_reference):
-    user_conversation_memory_file = memories_location + f"{username}.json"
+    user_conversation_memory_file = os.path.join(memories_location, f"{username}.json")
 
     # unpack tuple ref
     guild_id, channel_id, message_id = message_channel_reference
@@ -91,7 +91,7 @@ async def memory_fetch_user_conversations(client, username):
         try:
             content = json.loads(content_str if isinstance(content_str, str) else json.dumps(content_str))
         except json.JSONDecodeError:
-            return item  # Skip or handle error as needed
+            raise Exception(f"❌❌❌ Memory: {key + 1}, is Invalid or Malformed")
 
         message_reference = (str(content.get("channel_id")), str(content.get("message_id")))
         fetched_message = await fetch_discord_message(client, message_reference)

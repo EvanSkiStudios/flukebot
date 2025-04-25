@@ -7,8 +7,10 @@ from ollama import Client
 
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations
+from meet_the_robinsons import fetch_chatter_description
 
 from flukebot_tools import google_search_tool
+
 
 flukebot_rules = flukebot_personality
 
@@ -16,10 +18,11 @@ flukebot_rules = flukebot_personality
 LLM_current_chatter = None
 LLM_Current_Conversation_History = []
 LLM_memory_cache = {}
+chatter_user_information = ""
 
 
 def LLMStartup():
-    global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache
+    global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache, chatter_user_information
 
     client = Client()
     response = client.create(
@@ -29,11 +32,11 @@ def LLMStartup():
         stream=False,
     )
     print(f"# Client: {response.status}")
-    return LLM_Current_Conversation_History, LLM_current_chatter, LLM_memory_cache
+    return LLM_Current_Conversation_History, LLM_current_chatter, LLM_memory_cache, chatter_user_information
 
 
 async def LLMConverse(client, user_name, user_input, message_channel_reference):
-    global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache
+    global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache, chatter_user_information
 
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
     # if it's a different user, cache the current history to file the swap out the memories
@@ -61,7 +64,10 @@ async def LLMConverse(client, user_name, user_input, message_channel_reference):
         # set short term memories to the memories we have fetched
         LLM_Current_Conversation_History = user_convo_history
 
-    # set current chatter to who we are talking too now
+        # set the information behind the user
+        chatter_user_information = fetch_chatter_description(user_name)
+
+        # set current chatter to who we are talking too now
     LLM_current_chatter = user_name
 
     # print(f"{LLM_Current_Conversation_History}")
@@ -71,6 +77,7 @@ You are currently talking to {user_name}, their name is {user_name},
 if the person you are chatting too asks what their name is, you know their name as {user_name}.
 if {user_name} mentions flukebot in any context, its safe to assume they are talking about you,
 and not some other entity called flukebot.
+
 """
 
     # continue as normal
@@ -78,7 +85,7 @@ and not some other entity called flukebot.
         model='flukebot',
         messages=[{
             'role': 'system',
-            'content': flukebot_rules + flukebot_context
+            'content': flukebot_rules + flukebot_context + chatter_user_information
         }] + LLM_Current_Conversation_History + [{'role': 'user', 'name': user_name, 'content': user_input}],
     )
 
