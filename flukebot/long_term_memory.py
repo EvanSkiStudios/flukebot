@@ -1,6 +1,7 @@
 import os
 import json
 import discord
+import asyncio
 
 
 # get location of memories
@@ -70,41 +71,37 @@ async def fetch_discord_message(client, message_reference):
 
 
 async def memory_fetch_user_conversations(client, username, llm_current_chatter, current_llm_history, message_channel_reference):
+    user_conversation_memory_file = os.path.join(memories_location, f"{username}.json")
 
-    # check if new user already has history
-    user_conversation_memory_file = memories_location + f"{username}.json"
-    if os.path.exists(user_conversation_memory_file):
-        with open(user_conversation_memory_file, "r") as f:
-            message_history_references = json.load(f)
-
-        total_keys = len(message_history_references)
-        for (key, item) in enumerate(message_history_references):
-            # print(f"GETTING MEMORY: {key} \n{key}\n{item}\n")
-            print(f"GETTING MEMORY: {key} / {total_keys}")
-
-            if item["role"] == "user":
-                # print(f"MEMORY IS USER:\n{key}\n{item}\n")
-
-                # Extract the necessary values
-                # the dict is stored as a string, so we need to convert it back to a dict
-                fixed_content = item["content"].replace("'", '"')
-                item["content"] = json.loads(fixed_content)
-
-                channel_id, message_id = map(str, [item["content"]["channel_id"], item["content"]["message_id"]])
-                message_reference = (channel_id, message_id)
-
-                # Fetch the message from Discord
-                fetched_message = await fetch_discord_message(client, message_reference)
-
-                # Check if the fetch was successful (assuming -1 means failure)
-                if fetched_message != -1:
-                    # Replace the content in the original dictionary
-                    item["content"] = fetched_message
-
-                    # Optionally, update the dictionary with the new value if you want to keep the reference
-                    message_history_references[key] = item
-        return message_history_references
-
-    else:
+    if not os.path.exists(user_conversation_memory_file):
         return []
-    # if no history file just return an empty list
+
+    # Load the message history
+    with open(user_conversation_memory_file, "r") as f:
+        message_history_references = json.load(f)
+
+    async def process_item(key, item):
+        print(f"GETTING MEMORY: {key + 1} / {len(message_history_references)}")
+
+        if item.get("role") != "user":
+            return item
+
+        # Safely parse JSON content
+        content_str = item["content"]
+        try:
+            content = json.loads(content_str if isinstance(content_str, str) else json.dumps(content_str))
+        except json.JSONDecodeError:
+            return item  # Skip or handle error as needed
+
+        message_reference = (str(content.get("channel_id")), str(content.get("message_id")))
+        fetched_message = await fetch_discord_message(client, message_reference)
+
+        if fetched_message != -1:
+            item["content"] = fetched_message
+        return item
+
+    # Process all items concurrently
+    processed_items = await asyncio.gather(
+        *(process_item(i, item) for i, item in enumerate(message_history_references)))
+
+    return processed_items
