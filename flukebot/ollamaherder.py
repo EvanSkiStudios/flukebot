@@ -43,6 +43,8 @@ async def LLMConverse(client, user_name, user_input, message_channel_reference):
         # search through memory cache for user
         # print(f"{LLM_memory_cache}")
 
+        user_convo_history = []
+
         # Loop through and check for the user
         found_user_cache = False
         if str(user_name) in LLM_memory_cache:
@@ -54,11 +56,7 @@ async def LLMConverse(client, user_name, user_input, message_channel_reference):
 
         # if we don't already have the user in our memory cache, we need to get it
         if not found_user_cache:
-            user_convo_history = await memory_fetch_user_conversations(
-                client, user_name, LLM_current_chatter,
-                LLM_Current_Conversation_History,
-                message_channel_reference
-            )
+            user_convo_history = await memory_fetch_user_conversations(client, user_name)
 
         # set short term memories to the memories we have fetched
         LLM_Current_Conversation_History = user_convo_history
@@ -68,24 +66,21 @@ async def LLMConverse(client, user_name, user_input, message_channel_reference):
 
     # print(f"{LLM_Current_Conversation_History}")
 
-    # continue as normal
-    response = chat(
-        model='flukebot',
-        messages=[
-                     {'role': 'system',
-                      'content': flukebot_rules +
-                      f"""
+    flukebot_context = f"""
 You are currently talking to {user_name}, their name is {user_name},
 if the person you are chatting too asks what their name is, you know their name as {user_name}.
 if {user_name} mentions flukebot in any context, its safe to assume they are talking about you,
 and not some other entity called flukebot.
 """
-                      }
-                 ] + LLM_Current_Conversation_History + [
-                     {'role': 'user', 'name': user_name, 'content': user_input},
-                 ]
+
+    # continue as normal
+    response = chat(
+        model='flukebot',
+        messages=[{
+            'role': 'system',
+            'content': flukebot_rules + flukebot_context
+        }] + LLM_Current_Conversation_History + [{'role': 'user', 'name': user_name, 'content': user_input}],
     )
-    # TODO - look into why adding TOOLS cause him to never respond
 
     # Add the response to the messages to maintain the history
     chat_new_history = [

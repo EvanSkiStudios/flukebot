@@ -70,7 +70,7 @@ async def fetch_discord_message(client, message_reference):
     return -1  # Return None if message couldn't be fetched
 
 
-async def memory_fetch_user_conversations(client, username, llm_current_chatter, current_llm_history, message_channel_reference):
+async def memory_fetch_user_conversations(client, username):
     user_conversation_memory_file = os.path.join(memories_location, f"{username}.json")
 
     if not os.path.exists(user_conversation_memory_file):

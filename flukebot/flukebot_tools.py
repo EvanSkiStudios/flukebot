@@ -33,7 +33,7 @@ def google_search(s: str):
 google_search_tool = {
     'type': 'function',
     'function': {
-        'name': 'google_search',
+        'name': 'google_search_tool',
         'description': 'Searches Online',
         'parameters': {
             'type': 'object',
