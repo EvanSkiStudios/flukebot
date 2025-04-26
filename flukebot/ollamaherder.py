@@ -2,8 +2,7 @@ import json
 
 import ollama
 
-from ollama import chat
-from ollama import Client
+from ollama import Client, chat, ChatResponse
 
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations
@@ -84,15 +83,15 @@ and not some other entity called flukebot.
     response = chat(
         model='flukebot',
         messages=[{
-            'role': 'system',
-            'content': flukebot_rules + flukebot_context + chatter_user_information
-        }] + LLM_Current_Conversation_History + [{'role': 'user', 'name': user_name, 'content': user_input}],
+            "role": "system",
+            "content": flukebot_rules + flukebot_context + chatter_user_information
+        }] + LLM_Current_Conversation_History + [{"role": "user", "name": user_name, "content": user_input}],
     )
 
     # Add the response to the messages to maintain the history
     chat_new_history = [
-        {'role': 'user', 'name': user_name, 'content': user_input},
-        {'role': 'assistant', 'content': response.message.content},
+        {"role": "user", "name": user_name, "content": user_input},
+        {"role": "assistant", "content": response.message.content},
     ]
     LLM_Current_Conversation_History += chat_new_history
 

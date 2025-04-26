@@ -70,6 +70,10 @@ async def fetch_discord_message(client, message_reference):
     return -1  # Return None if message couldn't be fetched
 
 
+BATCH_SIZE = 20  # How many items to fetch at once
+DELAY_BETWEEN_BATCHES = 1  # Seconds to wait between each batch
+
+
 async def memory_fetch_user_conversations(client, username):
     user_conversation_memory_file = os.path.join(memories_location, f"{username}.json")
 
@@ -91,7 +95,10 @@ async def memory_fetch_user_conversations(client, username):
         try:
             content = json.loads(content_str if isinstance(content_str, str) else json.dumps(content_str))
         except json.JSONDecodeError:
-            raise Exception(f"❌❌❌ Memory: {key + 1}, is Invalid or Malformed")
+            # print(f"❌❌ Json Error for Memory: {key + 1}\n{item}")
+            # return item  # Skip or handle error as needed
+            fixed_data = content_str.replace("'", '"')
+            content = json.loads(fixed_data if isinstance(fixed_data, str) else json.dumps(fixed_data))
 
         message_reference = (str(content.get("channel_id")), str(content.get("message_id")))
         fetched_message = await fetch_discord_message(client, message_reference)
@@ -101,7 +108,26 @@ async def memory_fetch_user_conversations(client, username):
         return item
 
     # Process all items concurrently
-    processed_items = await asyncio.gather(
-        *(process_item(i, item) for i, item in enumerate(message_history_references)))
+    # processed_items = await asyncio.gather(
+    #    *(process_item(i, item) for i, item in enumerate(message_history_references)))
+
+    # print(f"{processed_items}")
+
+    processed_items = []
+
+    # Batching logic
+    for i in range(0, len(message_history_references), BATCH_SIZE):
+        batch = message_history_references[i:i + BATCH_SIZE]
+
+        tasks = [process_item(i + j, item) for j, item in enumerate(batch)]
+        results = await asyncio.gather(*tasks)
+
+        processed_items.extend(results)
+
+        if i + BATCH_SIZE < len(message_history_references):
+            print(f"⏳ Waiting {DELAY_BETWEEN_BATCHES} second(s) before next batch...")
+            await asyncio.sleep(DELAY_BETWEEN_BATCHES)
+
+    print(f"✅ Finished processing {len(processed_items)} memories")
 
     return processed_items
