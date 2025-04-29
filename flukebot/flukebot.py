@@ -22,6 +22,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TOKEN")
 BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
 BOT_SERVER_ID = os.getenv("SERVER_ID")
+BOT_DM_CHANNEL_ID = os.getenv("DM_CHANNEL_ID")
 GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD")
 
 # set discord intents
@@ -131,12 +132,6 @@ async def on_message(message):
     # print(f'{message.channel.id}')
     # print(f' RECEIVED MESSAGE: {message}')
 
-    # pack message content into tuple ref, to use later
-    guild_id, channel_id, message_id = map(str, [message.author.guild.id, message.channel.id, message.id])
-    message_channel_reference = (guild_id, channel_id, message_id)
-
-    message_lower = message.content.lower()
-
     if message.author == client.user:
         return
 
@@ -146,8 +141,18 @@ async def on_message(message):
     if str(message.channel.id) == GMC_DISCUSSION_THREAD:
         return
 
+    # DMs
+    if str(message.channel.id) == BOT_DM_CHANNEL_ID:
+        await message.channel.send("DM TEST SUCCESS")
+        return
 
     # if message.author.bot:
+
+    # pack message content into tuple ref, to use later
+    guild_id, channel_id, message_id = map(str, [message.author.guild.id, message.channel.id, message.id])
+    message_channel_reference = (guild_id, channel_id, message_id)
+
+    message_lower = message.content.lower()
 
     # replying to bot directly
     if message.reference:
