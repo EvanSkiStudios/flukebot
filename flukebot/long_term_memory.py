@@ -52,9 +52,10 @@ def convo_write_memories(username, conversation_data, message_channel_reference)
         f.close()
 
 
-async def fetch_discord_message(client, message_reference):
+async def fetch_discord_message(client, message_reference, retries=3, backoff=1.0):
     # unpack tuple ref
     channel_id, message_id = message_reference
+
     try:
         channel = await client.fetch_channel(channel_id)
         message = await channel.fetch_message(message_id)
@@ -65,13 +66,18 @@ async def fetch_discord_message(client, message_reference):
     except discord.Forbidden:
         print(f"🚫 Bot doesn't have permission to access the channel or  {message_id}.")
     except discord.HTTPException as e:
-        print(f"⚠️ A general HTTP error occurred: {e}")
+        if e.status == 429 and retries > 0:
+            print(f"⏳ Rate limit hit (429). Retrying in {backoff:.1f} seconds...")
+            await asyncio.sleep(backoff)
+            return await fetch_discord_message(client, message_reference, retries - 1, backoff * 2)
+        else:
+            print(f"⚠️ HTTP error occurred: {e} (status {e.status})")
 
     return -1  # Return None if message couldn't be fetched
 
 
-BATCH_SIZE = 10  # How many items to fetch at once
-DELAY_BETWEEN_BATCHES = 1  # Seconds to wait between each batch
+# BATCH_SIZE = 10  # How many items to fetch at once
+# DELAY_BETWEEN_BATCHES = 1  # Seconds to wait between each batch
 # TODO - This works but god is it slow, we need to figure out how to work around the rate limiting
 
 
@@ -83,7 +89,8 @@ async def memory_fetch_user_conversations(client, username):
 
     # Load the message history
     with open(user_conversation_memory_file, "r") as f:
-        message_history_references = json.load(f)
+        full_history = json.load(f)
+        message_history_references = full_history[-20:]  # Only keep the last 20
 
     async def process_item(key, item):
         print(f"GETTING MEMORY: {key + 1} / {len(message_history_references)}")
@@ -109,25 +116,8 @@ async def memory_fetch_user_conversations(client, username):
         return item
 
     # Process all items concurrently
-    # processed_items = await asyncio.gather(
-    #    *(process_item(i, item) for i, item in enumerate(message_history_references)))
-
-    # print(f"{processed_items}")
-
-    processed_items = []
-
-    # Batching logic
-    for i in range(0, len(message_history_references), BATCH_SIZE):
-        batch = message_history_references[i:i + BATCH_SIZE]
-
-        tasks = [process_item(i + j, item) for j, item in enumerate(batch)]
-        results = await asyncio.gather(*tasks)
-
-        processed_items.extend(results)
-
-        if i + BATCH_SIZE < len(message_history_references):
-            print(f"⏳ Waiting {DELAY_BETWEEN_BATCHES} second(s) before next batch...")
-            await asyncio.sleep(DELAY_BETWEEN_BATCHES)
+    processed_items = await asyncio.gather(
+        *(process_item(i, item) for i, item in enumerate(message_history_references)))
 
     print(f"✅ Finished processing {len(processed_items)} memories")
 
