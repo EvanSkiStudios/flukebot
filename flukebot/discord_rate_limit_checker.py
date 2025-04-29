@@ -39,7 +39,8 @@ def get_discord_rate_limit_headers(endpoint: str, token: str):
 # Example usage:
 if __name__ == "__main__":
     # Replace with your bot token and a valid endpoint (e.g., "users/@me")
-    endpoint = f"channels/{BOT_SERVER_CHANNEL_ID}/messages"
+    #endpoint = f"channels/{BOT_SERVER_CHANNEL_ID}/messages"
+    endpoint = f"users/@me"
 
     headers = get_discord_rate_limit_headers(endpoint, BOT_TOKEN)
     for k, v in headers.items():

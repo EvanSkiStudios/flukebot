@@ -70,8 +70,9 @@ async def fetch_discord_message(client, message_reference):
     return -1  # Return None if message couldn't be fetched
 
 
-BATCH_SIZE = 20  # How many items to fetch at once
+BATCH_SIZE = 10  # How many items to fetch at once
 DELAY_BETWEEN_BATCHES = 1  # Seconds to wait between each batch
+# TODO - This works but god is it slow, we need to figure out how to work around the rate limiting
 
 
 async def memory_fetch_user_conversations(client, username):
