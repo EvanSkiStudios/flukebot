@@ -17,7 +17,7 @@
  
  ### About
  Flukebot is designed to be able to manage talking to multiple users at the same time, as well as keep a long history with those users  
- See the [Wiki](https://github.com/EvanSkiStudios/flukebot/wiki0) for more information  
+ See the [Wiki](https://github.com/EvanSkiStudios/flukebot/wiki) for more information  
 
  ### Bots this Bot will Interact with
  [Jbax1899's](https://github.com/jbax1899) ---- [RolyBot](https://github.com/jbax1899/RolyBot)  
