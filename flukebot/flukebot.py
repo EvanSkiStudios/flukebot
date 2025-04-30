@@ -123,7 +123,71 @@ Please send me a DM with "save history" to opt in. or "delete history" to opt ou
     await ctx.reply(ctx.author.mention + information_message)
 
 
-async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
+async def command_save_history(user):
+    # get location of consent file
+    running_dir = os.path.dirname(os.path.realpath(__file__))
+    file_location = str(running_dir) + "/memories/"
+    consent_file = os.path.join(file_location, "__consent_users.json")
+
+    if not os.path.exists(consent_file):
+        print("❌❌❌ Can not find user consent file!!")
+        return "unexpected Error Please Try again later"
+
+    # Load the message history
+    with open(consent_file, "r") as f:
+        file_data = json.load(f)
+
+    # add user to list
+    if str(user) not in file_data:
+        file_data.append(str(user))
+
+        # Save the updated data back to the file
+        with open(consent_file, 'w') as file:
+            json.dump(file_data, file, indent=4)
+
+    return (
+        "Your conversation history will now be saved.\nAt anytime send me 'delete history' to opt out.\nPlease also "
+        "see the command to delete conversation history by using '$fb help'")
+
+
+async def command_delete_history(user):
+    # get location of consent file
+    running_dir = os.path.dirname(os.path.realpath(__file__))
+    file_location = str(running_dir) + "/memories/"
+    consent_file = os.path.join(file_location, "__consent_users.json")
+
+    if not os.path.exists(consent_file):
+        print("❌❌❌ Can not find user consent file!!")
+        return "unexpected Error Please Try again later"
+
+    # Load the existing data
+    with open(consent_file, 'r') as file:
+        data = json.load(file)
+
+    # Remove "dave" if it exists
+    if str(user) in data:
+        data.remove(str(user))
+
+    # Save the updated data back to the file
+    with open(consent_file, 'w') as file:
+        json.dump(data, file, indent=4)
+
+    return_message = "You have been removed from the history collection list"
+
+    outcome = convo_delete_history(user)
+    outcome_message = "Unknown Error with current conversation history, Try again later!"
+
+    if outcome == 1:
+        outcome_message = "Conversation History has been deleted"
+
+    if outcome == -1:
+        outcome_message = ("Conversation History might not exist or an Error Occurred, Please Contact Evanski to have "
+                           "your history deleted")
+
+    return return_message + "\n" + outcome_message
+
+
+async def ollama_response(bot_client, message_author_name, message_content):
 
     LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
     response = (LLMResponse
@@ -145,8 +209,8 @@ async def ollama_response(bot_client, message_author_name, message_content, mess
 async def on_message(message):
     await client.process_commands(message)  # This line is required!
 
-    # print(f'{message.channel.id}')
-    # print(f' RECEIVED MESSAGE: {message}')
+    message_lower = message.content.lower()
+    username = message.author.name
 
     if message.author == client.user:
         return
@@ -159,77 +223,24 @@ async def on_message(message):
 
     # DMs
     if str(message.channel.id) == BOT_DM_CHANNEL_ID:
-        message_content = message.content.lower()
-        user = message.author.name
+        # print(f"{message_content}")
 
-        print(f"{message_content}")
-
-        if message_content.find('save history') != -1:
-
-            # get location of consent file
-            running_dir = os.path.dirname(os.path.realpath(__file__))
-            file_location = str(running_dir) + "/memories/"
-            consent_file = os.path.join(file_location, "__consent_users.json")
-
-            if not os.path.exists(consent_file):
-                print("❌❌❌ Can not find user consent file!!")
-                await message.channel.send("unexpected Error Please Try again later")
-                return
-
-            # Load the message history
-            with open(consent_file, "r") as f:
-                file_data = json.load(f)
-
-            # add user to list
-            if str(user) not in file_data:
-                file_data.append(str(user))
-
-                # Save the updated data back to the file
-                with open(consent_file, 'w') as file:
-                    json.dump(file_data, file, indent=4)
-
-            await message.channel.send("Your conversation history will now be saved.\nAt anytime send me 'delete history' to opt out.\nPlease also see the command to delete conversation history by using '$fb help'")
+        if message_lower.find('save history') != -1:
+            output = command_save_history(username)
+            await message.channel.send(output)
             return
 
-        if message_content.find('delete history') != -1:
-
-            # get location of consent file
-            running_dir = os.path.dirname(os.path.realpath(__file__))
-            file_location = str(running_dir) + "/memories/"
-            consent_file = os.path.join(file_location, "__consent_users.json")
-
-            if not os.path.exists(consent_file):
-                print("❌❌❌ Can not find user consent file!!")
-                await message.channel.send("unexpected Error Please Try again later")
-                return
-
-            # Load the existing data
-            with open(consent_file, 'r') as file:
-                data = json.load(file)
-
-            # Remove "dave" if it exists
-            if str(user) in data:
-                data.remove(str(user))
-
-            # Save the updated data back to the file
-            with open(consent_file, 'w') as file:
-                json.dump(data, file, indent=4)
-
-            return_message = "You have been removed from the history collection list"
-
-            outcome = convo_delete_history(user)
-            outcome_message = "Unknown Error with current conversation history, Try again later!"
-
-            if outcome == 1:
-                outcome_message = "Conversation History has been deleted"
-
-            if outcome == -1:
-                outcome_message = "Conversation History might not exist or an Error Occuried, Please Contact Evanski to have your history deleted"
-
-            await message.channel.send(return_message + "\n" + outcome_message)
+        if message_lower.find('delete history') != -1:
+            output = command_delete_history(username)
+            await message.channel.send(output)
             return
 
-        await message.channel.send("message received!, currently I dont have any special features in DMs")
+        async with message.channel.typing():  # displays "is typing" status
+            response = await ollama_response(client, message.author.name, message_lower)
+
+        for i, part in enumerate(response):
+            await message.channel.send(part)
+
         return
 
     # if message.author.bot:
@@ -237,8 +248,6 @@ async def on_message(message):
     # pack message content into tuple ref, to use later
     guild_id, channel_id, message_id = map(str, [message.author.guild.id, message.channel.id, message.id])
     message_channel_reference = (guild_id, channel_id, message_id)
-
-    message_lower = message.content.lower()
 
     # replying to bot directly
     if message.reference:
@@ -248,8 +257,7 @@ async def on_message(message):
             message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
 
             async with message.channel.typing(): # displays "is typing" status
-                response = await ollama_response(client, message.author.name, message_content,
-                                                 message_channel_reference)
+                response = await ollama_response(client, username, message_content)
 
             for i, part in enumerate(response):
                 await message.channel.send(part)
@@ -262,8 +270,7 @@ async def on_message(message):
         message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
 
         async with message.channel.typing():
-            response = await ollama_response(client, message.author.name, message_content,
-                                             message_channel_reference)
+            response = await ollama_response(client, username, message_content)
 
         for i, part in enumerate(response):
             await message.channel.send(part)
@@ -275,8 +282,7 @@ async def on_message(message):
         message_content = message.content.lower()
 
         async with message.channel.typing():
-            response = await ollama_response(client, message.author.name, message_content,
-                                             message_channel_reference)
+            response = await ollama_response(client, username, message_content)
 
         for i, part in enumerate(response):
             await message.channel.send(part)

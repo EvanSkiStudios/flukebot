@@ -3,12 +3,11 @@ import discord
 
 
 def set_activity():
-    activity = discord.Game(name="Hello Kitty Island Adventure")
+    activity = discord.Game(name="Hello Kitty Island Adventure", platform="steam", type=discord.ActivityType.playing)
 
     random_integer = random.randint(1, 5)
 
     match random_integer:
-
         case 2:
             # Setting `Streaming ` status
             activity = discord.Streaming(name="Programming an AI LLM", url="https://www.twitch.tv/evanskistudios")
