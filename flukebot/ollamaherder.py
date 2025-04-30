@@ -34,7 +34,7 @@ def LLMStartup():
     return LLM_Current_Conversation_History, LLM_current_chatter, LLM_memory_cache, chatter_user_information
 
 
-async def LLMConverse(client, user_name, user_input, message_channel_reference):
+async def LLMConverse(client, user_name, user_input):
     global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache, chatter_user_information
 
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
@@ -58,7 +58,7 @@ async def LLMConverse(client, user_name, user_input, message_channel_reference):
 
         # if we don't already have the user in our memory cache, we need to get it
         if not found_user_cache:
-            user_convo_history = await memory_fetch_user_conversations(client, user_name)
+            user_convo_history = await memory_fetch_user_conversations(user_name)
 
         # set short term memories to the memories we have fetched
         LLM_Current_Conversation_History = user_convo_history
@@ -84,7 +84,7 @@ and not some other entity called flukebot.
         model='flukebot',
         messages=[{
             "role": "system",
-            "content": flukebot_rules + flukebot_context + chatter_user_information
+            "content": flukebot_rules + flukebot_context + chatter_user_information + "Here is what they have said to you: "
         }] + LLM_Current_Conversation_History + [{"role": "user", "name": user_name, "content": user_input}],
     )
 
@@ -109,7 +109,7 @@ and not some other entity called flukebot.
     # print(f"{LLM_memory_cache}")
 
     # Append the url reference of the memory to file
-    convo_write_memories(user_name, chat_new_history, message_channel_reference)
+    convo_write_memories(user_name, chat_new_history)
 
     # return the message to main script
     return response.message.content

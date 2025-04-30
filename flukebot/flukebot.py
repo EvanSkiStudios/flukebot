@@ -1,3 +1,4 @@
+import json
 import os
 
 import discord
@@ -107,9 +108,24 @@ async def clearhistory(ctx):
     await ctx.send(outcome_message)
 
 
+@client.command(help="Allows Conversation History between you and FlukeBot to be saved")
+async def savehistory(ctx):
+    print(f"Command issued: SaveHistory")
+    user = ctx.author.id
+
+    information_message = """
+In order to save conversation history I require consent to save your discord messages.
+Only the messages you send to me will be saved and only used to remember details and conversation history.
+Your conversation history is never sold or given to anyone or any 3rd party.
+At any point you can run the command "$fb clearhistory" to remove your conversation history.
+Please send me a DM with "save history" to opt in. or "delete history" to opt out.
+"""
+    await ctx.reply(ctx.author.mention + information_message)
+
+
 async def ollama_response(bot_client, message_author_name, message_content, message_channel_reference):
 
-    LLMResponse = await LLMConverse(bot_client, message_author_name, message_content, message_channel_reference)
+    LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
     response = (LLMResponse
                 .replace("'", "\'")
                 .replace("evanski_", "Evanski")
@@ -143,7 +159,77 @@ async def on_message(message):
 
     # DMs
     if str(message.channel.id) == BOT_DM_CHANNEL_ID:
-        await message.channel.send("DM TEST SUCCESS")
+        message_content = message.content.lower()
+        user = message.author.name
+
+        print(f"{message_content}")
+
+        if message_content.find('save history') != -1:
+
+            # get location of consent file
+            running_dir = os.path.dirname(os.path.realpath(__file__))
+            file_location = str(running_dir) + "/memories/"
+            consent_file = os.path.join(file_location, "__consent_users.json")
+
+            if not os.path.exists(consent_file):
+                print("❌❌❌ Can not find user consent file!!")
+                await message.channel.send("unexpected Error Please Try again later")
+                return
+
+            # Load the message history
+            with open(consent_file, "r") as f:
+                file_data = json.load(f)
+
+            # add user to list
+            if str(user) not in file_data:
+                file_data.append(str(user))
+
+                # Save the updated data back to the file
+                with open(consent_file, 'w') as file:
+                    json.dump(file_data, file, indent=4)
+
+            await message.channel.send("Your conversation history will now be saved.\nAt anytime send me 'delete history' to opt out.\nPlease also see the command to delete conversation history by using '$fb help'")
+            return
+
+        if message_content.find('delete history') != -1:
+
+            # get location of consent file
+            running_dir = os.path.dirname(os.path.realpath(__file__))
+            file_location = str(running_dir) + "/memories/"
+            consent_file = os.path.join(file_location, "__consent_users.json")
+
+            if not os.path.exists(consent_file):
+                print("❌❌❌ Can not find user consent file!!")
+                await message.channel.send("unexpected Error Please Try again later")
+                return
+
+            # Load the existing data
+            with open(consent_file, 'r') as file:
+                data = json.load(file)
+
+            # Remove "dave" if it exists
+            if str(user) in data:
+                data.remove(str(user))
+
+            # Save the updated data back to the file
+            with open(consent_file, 'w') as file:
+                json.dump(data, file, indent=4)
+
+            return_message = "You have been removed from the history collection list"
+
+            outcome = convo_delete_history(user)
+            outcome_message = "Unknown Error with current conversation history, Try again later!"
+
+            if outcome == 1:
+                outcome_message = "Conversation History has been deleted"
+
+            if outcome == -1:
+                outcome_message = "Conversation History might not exist or an Error Occuried, Please Contact Evanski to have your history deleted"
+
+            await message.channel.send(return_message + "\n" + outcome_message)
+            return
+
+        await message.channel.send("message received!, currently I dont have any special features in DMs")
         return
 
     # if message.author.bot:
