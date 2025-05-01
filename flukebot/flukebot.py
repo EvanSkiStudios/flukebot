@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from dotenv import load_dotenv
 
+from flukebot_filter import LLM_Filter_Message
 from long_term_memory import convo_delete_history
 from ollamaherder import LLMStartup
 from ollamaherder import LLMConverse
@@ -187,22 +188,33 @@ async def command_delete_history(user):
     return return_message + "\n" + outcome_message
 
 
-async def ollama_response(bot_client, message_author_name, message_content):
+async def ollama_response(bot_client, message_author_name, message_content, filtered=False):
+    output_bool = True
+    if filtered:
+        dictation = await LLM_Filter_Message(message_content)
+        print(f"\n{message_content}")
+        print(f"Directed to Flukebot = {dictation["output"]}")
+        print(f"{dictation["content"]}\n")
 
-    LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
-    response = (LLMResponse
-                .replace("'", "\'")
-                .replace("evanski_", "Evanski")
-                .replace("Evanski_", "Evanski")
-                )
+        output_bool = dictation["output"]
 
-    # discord message limit
-    if len(response) > 2000:
-        response = split_response(response)
-    else:
-        response = [response]
+    if output_bool:
+        LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
+        response = (LLMResponse
+                    .replace("'", "\'")
+                    .replace("evanski_", "Evanski")
+                    .replace("Evanski_", "Evanski")
+                    )
 
-    return response
+        # discord message limit
+        if len(response) > 2000:
+            response = split_response(response)
+        else:
+            response = [response]
+
+        return response
+
+    return -1
 
 
 @client.event
@@ -238,6 +250,9 @@ async def on_message(message):
         async with message.channel.typing():  # displays "is typing" status
             response = await ollama_response(client, message.author.name, message_lower)
 
+        if response == -1:
+            return
+
         for i, part in enumerate(response):
             await message.channel.send(part)
 
@@ -256,8 +271,12 @@ async def on_message(message):
             message_content = message.content.lower()
             message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
 
-            async with message.channel.typing(): # displays "is typing" status
+            # displays "is typing" status
+            async with message.channel.typing():
                 response = await ollama_response(client, username, message_content)
+
+            if response == -1:
+                return
 
             for i, part in enumerate(response):
                 await message.channel.send(part)
@@ -272,6 +291,9 @@ async def on_message(message):
         async with message.channel.typing():
             response = await ollama_response(client, username, message_content)
 
+        if response == -1:
+            return
+
         for i, part in enumerate(response):
             await message.channel.send(part)
 
@@ -282,7 +304,10 @@ async def on_message(message):
         message_content = message.content.lower()
 
         async with message.channel.typing():
-            response = await ollama_response(client, username, message_content)
+            response = await ollama_response(client, username, message_content, True)
+
+        if response == -1:
+            return
 
         for i, part in enumerate(response):
             await message.channel.send(part)
