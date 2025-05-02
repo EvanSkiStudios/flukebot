@@ -10,7 +10,6 @@ from meet_the_robinsons import fetch_chatter_description
 
 from flukebot_tools import google_search_tool
 
-
 flukebot_rules = flukebot_personality
 
 # memories
@@ -84,7 +83,9 @@ and not some other entity called flukebot.
         model='flukebot',
         messages=[{
             "role": "system",
-            "content": flukebot_rules + flukebot_context + chatter_user_information + "Here is what they have said to you: "
+            "content": flukebot_rules +
+                    flukebot_context +
+                    chatter_user_information + "Here is what they have said to you: "
         }] + LLM_Current_Conversation_History + [{"role": "user", "name": user_name, "content": user_input}],
     )
 

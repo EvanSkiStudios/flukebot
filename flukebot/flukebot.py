@@ -304,7 +304,7 @@ async def on_message(message):
         message_content = message.content.lower()
 
         async with message.channel.typing():
-            response = await ollama_response(client, username, message_content, True)
+            response = await ollama_response(client, username, message_content, False)
 
         if response == -1:
             return
