@@ -234,16 +234,16 @@ async def on_message(message):
         return
 
     # DMs
-    if str(message.channel.id) == BOT_DM_CHANNEL_ID:
+    if isinstance(message.channel, discord.DMChannel):
         # print(f"{message_content}")
 
         if message_lower.find('save history') != -1:
-            output = command_save_history(username)
+            output = await command_save_history(username)
             await message.channel.send(output)
             return
 
         if message_lower.find('delete history') != -1:
-            output = command_delete_history(username)
+            output = await command_delete_history(username)
             await message.channel.send(output)
             return
 
