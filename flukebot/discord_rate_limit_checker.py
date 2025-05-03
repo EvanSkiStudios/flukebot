@@ -11,6 +11,7 @@ BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
 BOT_SERVER_ID = os.getenv("SERVER_ID")
 BOT_SERVER_CHANNEL_ID = os.getenv("GMCD_CHANNEL_ID")
 
+
 def get_discord_rate_limit_headers(endpoint: str, token: str):
     url = f"https://discord.com/api/v10/{endpoint}"
 
@@ -36,10 +37,11 @@ def get_discord_rate_limit_headers(endpoint: str, token: str):
 
     return rate_limit_headers
 
+
 # Example usage:
 if __name__ == "__main__":
     # Replace with your bot token and a valid endpoint (e.g., "users/@me")
-    #endpoint = f"channels/{BOT_SERVER_CHANNEL_ID}/messages"
+    # endpoint = f"channels/{BOT_SERVER_CHANNEL_ID}/messages"
     endpoint = f"users/@me"
 
     headers = get_discord_rate_limit_headers(endpoint, BOT_TOKEN)
