@@ -21,7 +21,7 @@ def set_activity():
             activity = discord.Activity(type=discord.ActivityType.watching, name="Shrek 7")
 
         case 5:
-            activity = discord.CustomActivity(name="Writing Merceranski fanfiction", emoji=' ')
+            activity = discord.CustomActivity(name="Writing Mercanski fanfiction", emoji=' ')
 
         case 6:
             activity = None  # Clear status
