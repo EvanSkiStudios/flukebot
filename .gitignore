@@ -5,3 +5,4 @@
 flukebot/.env
 /flukebot/memories
 /flukebot/__pycache__
+/flukebot/.idea
