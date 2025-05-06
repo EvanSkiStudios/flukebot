@@ -4,11 +4,13 @@ import ollama
 
 from ollama import Client, chat, ChatResponse
 
+from flukebot_filter import LLM_Filter_Message
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations
 from meet_the_robinsons import fetch_chatter_description
 
 from flukebot_tools import google_search_tool
+from utility import split_response
 
 flukebot_rules = flukebot_personality
 
@@ -31,6 +33,35 @@ def LLMStartup():
     )
     print(f"# Client: {response.status}")
     return LLM_Current_Conversation_History, LLM_current_chatter, LLM_memory_cache, chatter_user_information
+
+
+async def ollama_response(bot_client, message_author_name, message_content, filtered=False):
+    output_bool = True
+    if filtered:
+        dictation = await LLM_Filter_Message(message_content)
+        print(f"\n{message_content}")
+        print(f"Directed to Flukebot = {dictation["output"]}")
+        print(f"{dictation["content"]}\n")
+
+        output_bool = dictation["output"]
+
+    if output_bool:
+        LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
+        response = (LLMResponse
+                    .replace("'", "\'")
+                    .replace("evanski_", "Evanski")
+                    .replace("Evanski_", "Evanski")
+                    )
+
+        # discord message limit
+        if len(response) > 2000:
+            response = split_response(response)
+        else:
+            response = [response]
+
+        return response
+
+    return -1
 
 
 async def LLMConverse(client, user_name, user_input):
