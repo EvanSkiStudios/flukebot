@@ -90,6 +90,15 @@ async def changestatus(ctx):
     await ctx.send("Changed Status")
 
 
+@client.command(help="Changes Status To Custom")
+async def status(ctx, arg):
+    print(f"Command issued: Status")
+
+    await client.change_presence(activity=discord.CustomActivity(name=f"{arg}", emoji=' '))
+
+    await ctx.send(f"Status is now {arg}")
+
+
 @client.command(help="Removes all Conversation History between you and FlukeBot")
 async def clearhistory(ctx):
     print(f"Command issued: clearhistory")
@@ -284,9 +293,9 @@ async def on_message(message):
             return
 
     # Pinging the bot
-    if message_lower.find("@" + str(BOT_APPLICATION_ID)) != -1:
+    if message_lower.find(str(BOT_APPLICATION_ID)) != -1:
         message_content = message.content.lower()
-        message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}>", "")
+        message_content = message_content.replace(f"<@{BOT_APPLICATION_ID}> ", "")
 
         async with message.channel.typing():
             response = await ollama_response(client, username, message_content)
@@ -296,6 +305,7 @@ async def on_message(message):
 
         for i, part in enumerate(response):
             await message.channel.send(part)
+            # await message.reply(part)
 
         return
 
@@ -310,7 +320,12 @@ async def on_message(message):
             return
 
         for i, part in enumerate(response):
-            await message.channel.send(part)
+            # await message.channel.send(part)
+
+            if not message.author.bot and i == 0:
+                await message.reply(part)
+            else:
+                await message.channel.send(part)
 
         return
 

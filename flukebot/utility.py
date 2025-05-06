@@ -5,7 +5,7 @@ import discord
 def set_activity():
     activity = discord.Game(name="Hello Kitty Island Adventure", platform="steam", type=discord.ActivityType.playing)
 
-    random_integer = random.randint(1, 5)
+    random_integer = random.randint(1, 6)
 
     match random_integer:
         case 2:
@@ -21,6 +21,9 @@ def set_activity():
             activity = discord.Activity(type=discord.ActivityType.watching, name="Shrek 7")
 
         case 5:
+            activity = discord.CustomActivity(name="Writing Merceranski fanfiction", emoji=' ')
+
+        case 6:
             activity = None  # Clear status
 
     return activity
