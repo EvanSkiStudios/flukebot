@@ -20,6 +20,6 @@
  See the [Wiki](https://github.com/EvanSkiStudios/flukebot/wiki) for more information  
 
  ### Bots this Bot will Interact with
- [Jbax1899's](https://github.com/jbax1899) ---- [RolyBot](https://github.com/jbax1899/RolyBot)  
- [Mercerenies'](https://github.com/Mercerenies) ---- [Marco](https://github.com/Mercerenies/marco-bot) 
- [Circaurus'](https://github.com/Circaurus) --- [Shawbot](https://github.com/Circaurus/Shawbot)
+ [Jbax1899's](https://github.com/jbax1899) ---- [RolyBot](https://github.com/jbax1899/RolyBot)    
+ [Mercerenies'](https://github.com/Mercerenies) ---- [Marco](https://github.com/Mercerenies/marco-bot)   
+ [Circaurus'](https://github.com/Circaurus) --- [Shawbot](https://github.com/Circaurus/Shawbot)  
