@@ -5,6 +5,8 @@ import bot_commands as bc
 
 from discord.ext import commands
 from dotenv import load_dotenv
+
+from flukebot_emoji import llm_emoji_react_to_message
 from ollamaherder import ollama_response, LLMStartup
 
 
@@ -14,7 +16,8 @@ BOT_TOKEN = os.getenv("TOKEN")
 BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
 BOT_SERVER_ID = os.getenv("SERVER_ID")
 BOT_DM_CHANNEL_ID = os.getenv("DM_CHANNEL_ID")
-GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD")
+GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_D")
+GMC_NO_CONTEXT_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_NC")
 
 
 # set discord intents
@@ -36,11 +39,11 @@ class MyHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         help_message = """
 For Full documentation see: [The Github Repo](<https://github.com/EvanSkiStudios/flukebot>)
-Commands are issued like so: `$fb <command>`
+Commands are issued like so: `$fb <command> <argument>`
 ```Here are my commands:
 """
         for cog, commands_list in mapping.items():
-            for command in reversed(commands_list):
+            for command in commands_list:
                 help_message += f"`{command.name}` - {command.help or 'No description'}\n"
         help_message += "```"
         await self.get_destination().send(help_message)
@@ -91,6 +94,7 @@ async def history(ctx, arg=None):
 
 # ------- MESSAGE HANDLERS ---------
 async def llm_chat(message, username, message_content):
+
     async with message.channel.typing():
         response = await ollama_response(client, username, message_content, False)
 
@@ -117,7 +121,18 @@ async def on_message(message):
     if message.mention_everyone:
         return
 
+    if message_lower.find(command_prefix) != -1:
+        return
+
+    # reaction
+    reaction = await llm_emoji_react_to_message(message_lower)
+    if reaction.lower().find('no reaction') == -1:
+        await message.add_reaction(reaction)
+
     if str(message.channel.id) == GMC_DISCUSSION_THREAD:
+        return
+
+    if str(message.channel.id) == GMC_NO_CONTEXT_THREAD:
         return
 
     # DMs
@@ -133,14 +148,6 @@ async def on_message(message):
             output = await bc.command_delete_history(username)
             await message.channel.send(output)
             return
-
-        if message_lower.find(command_prefix) == -1:
-            await llm_chat(message, message.author.name, message_lower)
-        return
-
-# pack message content into tuple ref, to use later
-# guild_id, channel_id, message_id = map(str, [message.author.guild.id, message.channel.id, message.id])
-# message_channel_reference = (guild_id, channel_id, message_id)
 
     # replying to bot directly
     if message.reference:

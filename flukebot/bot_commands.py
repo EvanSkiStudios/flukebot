@@ -4,6 +4,7 @@ import random
 import discord
 
 from long_term_memory import convo_delete_history
+from ollamaherder import LLM_Current_Conversation_History
 
 
 def command_set_activity(current_activity=None):
@@ -160,3 +161,4 @@ async def command_delete_history(user):
                            "your history deleted")
 
     return return_message + "\n" + outcome_message
+

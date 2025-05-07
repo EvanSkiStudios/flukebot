@@ -10,7 +10,7 @@ from long_term_memory import convo_write_memories, memory_fetch_user_conversatio
 from meet_the_robinsons import fetch_chatter_description
 
 from flukebot_tools import google_search_tool
-from utility import split_response
+from utility import split_response, current_date_time
 
 flukebot_rules = flukebot_personality
 
@@ -101,6 +101,8 @@ async def LLMConverse(client, user_name, user_input):
 
     # print(f"{LLM_Current_Conversation_History}")
 
+    current_time = current_date_time()
+
     flukebot_context = f"""
 You are currently talking to {user_name}, their name is {user_name},
 if the person you are chatting too asks what their name is, you know their name as {user_name}.
@@ -115,6 +117,7 @@ and not some other entity called flukebot.
         messages=[{
             "role": "system",
             "content": flukebot_rules +
+                    current_time +
                     flukebot_context +
                     chatter_user_information + "Here is what they have said to you: "
         }] + LLM_Current_Conversation_History + [{"role": "user", "name": user_name, "content": user_input}],
