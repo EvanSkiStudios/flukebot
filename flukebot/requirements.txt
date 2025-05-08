@@ -4,3 +4,4 @@ python-dotenv~=1.1.0
 ollama~=0.4.7
 requests~=2.32.3
 pydantic~=2.11.3
+emoji~=2.14.1

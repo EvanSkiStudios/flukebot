@@ -1,3 +1,4 @@
+import asyncio
 import os
 import discord
 
@@ -6,7 +7,7 @@ import bot_commands as bc
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from flukebot_emoji import llm_emoji_react_to_message
+from flukebot_emoji import llm_emoji_react_to_message, gather_server_emotes
 from ollamaherder import ollama_response, LLMStartup
 
 
@@ -14,7 +15,7 @@ from ollamaherder import ollama_response, LLMStartup
 load_dotenv()
 BOT_TOKEN = os.getenv("TOKEN")
 BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
-BOT_SERVER_ID = os.getenv("SERVER_ID")
+BOT_SERVER_ID = os.getenv("GMCD_SERVER_ID")
 BOT_DM_CHANNEL_ID = os.getenv("DM_CHANNEL_ID")
 GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_D")
 GMC_NO_CONTEXT_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_NC")
@@ -23,6 +24,8 @@ GMC_NO_CONTEXT_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_NC")
 # set discord intents
 intents = discord.Intents.default()
 intents.message_content = True
+intents.emojis = True
+intents.emojis_and_stickers = True
 
 activity_status = bc.command_set_activity()
 
@@ -108,6 +111,13 @@ async def llm_chat(message, username, message_content):
             await message.channel.send(part)
 
 
+async def react_to_messages(message, message_lower):
+    # reaction
+    reaction = await llm_emoji_react_to_message(message_lower)
+    if reaction.find('no reaction') == -1:
+        await message.add_reaction(reaction)
+
+
 @client.event
 async def on_message(message):
     await client.process_commands(message)  # This line is required!
@@ -124,10 +134,10 @@ async def on_message(message):
     if message_lower.find(command_prefix) != -1:
         return
 
-    # reaction
-    reaction = await llm_emoji_react_to_message(message_lower)
-    if reaction.lower().find('no reaction') == -1:
-        await message.add_reaction(reaction)
+    # noinspection PyAsyncCall
+    task = asyncio.create_task(react_to_messages(message, message_lower))
+    task.add_done_callback(lambda t: t.exception())  # Prevent warning if task crashes
+    #  -- Its fine we don't care if it returns
 
     if str(message.channel.id) == GMC_DISCUSSION_THREAD:
         return
@@ -171,3 +181,4 @@ async def on_message(message):
 
 # Startup discord Bot
 client.run(BOT_TOKEN)
+gather_server_emotes(client, BOT_SERVER_ID)

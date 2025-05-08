@@ -15,10 +15,10 @@ def is_emoji(text):
     return text in emoji.EMOJI_DATA
 
 
-dictation_rules = ("You are Flukebot, a discord bot. You are roleplaying in a Discord server. \
+dictation_rules = ("You are a simple input output machine. \
 The user will feed you a chat message. If you feel strongly about the message, \
-reply with a single emoji. Otherwise, respond with \"No reaction\". If the chat message is explicit, \
-inappropriate or in anyway against your guidelines, again just respond with  \"No reaction\"."
+reply with a single emoji. Otherwise, respond with \"No reaction\". \
+You are only allowed to speak with emoji or only \"No reaction\"."
                    )
 
 
@@ -35,5 +35,14 @@ async def llm_emoji_react_to_message(content):
 
     output = response.message.content
     if not is_emoji(output):
-        output = "No reaction"
-    return output.lower()
+        # print(f"=========\n{content}\n{output}\n=========")
+        output = "no reaction"
+    return output
+
+
+def gather_server_emotes(client, bot_server_id):
+    guild = client.get_guild(int(bot_server_id))
+    if guild is not None:
+        for emote in guild.emojis:
+            return
+            # print(f"{emoji.name}: {emoji.id}")
