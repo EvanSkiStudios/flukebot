@@ -59,12 +59,15 @@ client.help_command = MyHelpCommand()
 # Startup LLM
 LLMStartup()
 
+emote_dict = {}
 
 # --------- BOT EVENTS ---------
 @client.event
 async def on_ready():
     # When the bot has logged in, call back
     print(f'We have logged in as {client.user}')
+    global emote_dict
+    emote_dict = gather_server_emotes(client, BOT_SERVER_ID)
 
 
 @client.event
@@ -112,8 +115,9 @@ async def llm_chat(message, username, message_content):
 
 
 async def react_to_messages(message, message_lower):
+    global emote_dict
     # reaction
-    reaction = await llm_emoji_react_to_message(message_lower)
+    reaction = await llm_emoji_react_to_message(message_lower, emote_dict)
     if reaction.find('no reaction') == -1:
         await message.add_reaction(reaction)
 
@@ -135,8 +139,8 @@ async def on_message(message):
         return
 
     # noinspection PyAsyncCall
-    task = asyncio.create_task(react_to_messages(message, message_lower))
-    task.add_done_callback(lambda t: t.exception())  # Prevent warning if task crashes
+    asyncio.create_task(react_to_messages(message, message_lower))
+    # task.add_done_callback(lambda t: t.exception())  # Prevent warning if task crashes
     #  -- Its fine we don't care if it returns
 
     if str(message.channel.id) == GMC_DISCUSSION_THREAD:
@@ -181,4 +185,3 @@ async def on_message(message):
 
 # Startup discord Bot
 client.run(BOT_TOKEN)
-gather_server_emotes(client, BOT_SERVER_ID)
