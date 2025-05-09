@@ -35,33 +35,21 @@ def LLMStartup():
     return LLM_Current_Conversation_History, LLM_current_chatter, LLM_memory_cache, chatter_user_information
 
 
-async def ollama_response(bot_client, message_author_name, message_content, filtered=False):
-    output_bool = True
-    if filtered:
-        dictation = await LLM_Filter_Message(message_content)
-        print(f"\n{message_content}")
-        print(f"Directed to Flukebot = {dictation["output"]}")
-        print(f"{dictation["content"]}\n")
+async def ollama_response(bot_client, message_author_name, message_content):
+    LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
+    response = (LLMResponse
+                .replace("'", "\'")
+                .replace("evanski_", "Evanski")
+                .replace("Evanski_", "Evanski")
+                )
 
-        output_bool = dictation["output"]
+    # discord message limit
+    if len(response) > 2000:
+        response = split_response(response)
+    else:
+        response = [response]
 
-    if output_bool:
-        LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
-        response = (LLMResponse
-                    .replace("'", "\'")
-                    .replace("evanski_", "Evanski")
-                    .replace("Evanski_", "Evanski")
-                    )
-
-        # discord message limit
-        if len(response) > 2000:
-            response = split_response(response)
-        else:
-            response = [response]
-
-        return response
-
-    return -1
+    return response
 
 
 async def LLMConverse(client, user_name, user_input):
@@ -111,16 +99,16 @@ and not some other entity called flukebot.
 
 """
 
+    flukebot_system_prompt = flukebot_rules + current_time + flukebot_context + chatter_user_information
+
     # continue as normal
     response = chat(
         model='flukebot',
-        messages=[{
-            "role": "system",
-            "content": flukebot_rules +
-                    current_time +
-                    flukebot_context +
-                    chatter_user_information + "Here is what they have said to you: "
-        }] + LLM_Current_Conversation_History + [{"role": "user", "name": user_name, "content": user_input}],
+        messages=[
+                     {"role": "system", "content": flukebot_system_prompt + "Here is what they have said to you: "}
+                 ] + LLM_Current_Conversation_History + [
+            {"role": "user", "name": user_name, "content": user_input}
+                                                        ],
     )
 
     # Add the response to the messages to maintain the history

@@ -73,7 +73,9 @@ Along with the normal emojis, you may also respond with any of the names of an s
 'gmhammer' Description: a image of the red gamemaker hammer logo,
 'gms2' Description: a image of the gamemaker studio logo,
 'emoji_50' Description: a image of the gamemaker cog logo that looks like a green snake
+"""
 
+reconfirmation = """
 To use one of these special emoji's instead simply respond with the name of the emoji in the list.
 or just respond with a normal emoji or \"No reaction\".
 So your response should be only a normal emoji, the name of a special emoji, or \"No reaction\".
@@ -85,7 +87,7 @@ async def llm_emoji_react_to_message(content, emote_dict):
     response = await client.chat(
         model='llama3.2',
         messages=[
-            {"role": "system", "content": dictation_rules + custom_emojis},
+            {"role": "system", "content": dictation_rules + custom_emojis + reconfirmation},
             {"role": "user", "content": content}
         ],
         options={'temperature': 0},  # Make responses more deterministic
