@@ -1,4 +1,5 @@
 import emoji
+import regex
 from ollama import Client, chat, ChatResponse, AsyncClient
 
 
@@ -15,9 +16,23 @@ def is_emoji(text):
     return text in emoji.EMOJI_DATA
 
 
+def split_text_and_emojis(s):
+    # This pattern matches either:
+    # - One or more emoji grapheme clusters (\X with \p{Emoji})
+    # - Or a word of non-emoji characters
+    return regex.findall(r'\p{Emoji}|\w+|\s+|[^\w\s]', s)
+
+
+def clean_split(s):
+    # Get tokens
+    tokens = split_text_and_emojis(s)
+    # Strip whitespace tokens and remove empty ones
+    return [t for t in tokens if not t.isspace() and t != '']
+
+
 dictation_rules = ("You are a simple input output machine. \
 The user will feed you a chat message. If you feel strongly about the message, \
-reply with a single emoji. Otherwise, respond with \"No reaction\". \
+reply with a single or multiple emojis. Otherwise, respond with \"No reaction\". \
 You are only allowed to speak with emoji or only \"No reaction\"."
                    )
 
@@ -84,7 +99,7 @@ custom_emojis_two = """
 reconfirmation = """
 To use one of these special emoji's instead simply respond with the name of the emoji in the list.
 or just respond with a normal emoji or \"No reaction\".
-So your response should be only a normal emoji, the name of a special emoji, or \"No reaction\".
+So your response should be only emojis, the name of a special emoji, or \"No reaction\".
 """
 
 
@@ -101,19 +116,33 @@ async def llm_emoji_react_to_message(content, emote_dict):
 
     output = response.message.content
     output = output.replace("'", "").strip()
-    # print(f"{output}")
-    if not is_emoji(output):
-        custom_emoji = emote_dict.get(output)
+
+    # split response into an array
+    emoji_list = clean_split(output)
+
+    reaction_list = []
+    for emote in emoji_list:
+
+        # check if its a normal emoji
+        if is_emoji(emote):
+            reaction_list.append(emote)
+            continue
+
+        # if its not check if its a special emoji
+        custom_emoji = emote_dict.get(emote)
         if custom_emoji is not None:
-            output = f'<:{output}:{custom_emoji}>'
+            custom_emote = f'<:{emote}:{custom_emoji}>'
             # todo: animated emojis require a:{output}:{custom_emoji} for some reason
             #  - change this so if the bot responds with the format then use it
             #  - might change the prompt to just use the correct syntax
-        else:
-            # print(f"{response.message.content}")
-            # print(f"INVALID REACTION: {output}")
-            output = "no reaction"
-    return output
+            reaction_list.append(custom_emote)
+            continue
+
+        # finally just do no reaction as its garbage
+        # print(f"{response.message.content}")
+        # print(f"INVALID REACTION: {output}")
+        reaction_list.append("no reaction")
+    return reaction_list
 
 
 def gather_server_emotes(client, bot_server_id, test_server_id):

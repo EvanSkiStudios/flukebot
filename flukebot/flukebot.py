@@ -101,7 +101,6 @@ async def history(ctx, arg=None):
 
 # ------- MESSAGE HANDLERS ---------
 async def llm_chat(message, username, message_content):
-
     async with message.channel.typing():
         response = await ollama_response(client, username, message_content)
 
@@ -119,8 +118,11 @@ async def react_to_messages(message, message_lower):
     global emote_dict
     # reaction
     reaction = await llm_emoji_react_to_message(message_lower, emote_dict)
-    if reaction.find('no reaction') == -1:
-        await message.add_reaction(reaction)
+    # discord limits by 20 reactions
+    reaction = reaction[:20]
+    for emoji in reaction:
+        if emoji.find('no reaction') == -1:
+            await message.add_reaction(emoji)
 
 
 @client.event

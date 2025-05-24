@@ -40,6 +40,7 @@ def LLMStartup():
 # === Main Entry Point ===
 async def ollama_response(bot_client, message_author_name, message_content):
     llm_response = await LLMConverse(bot_client, message_author_name, message_content)
+    print(f"HAVE RESPONSE, CLEANING AND RETURNING")
     cleaned = (
         llm_response.replace("'", "\'")
         .replace("evanski_", "Evanski")
@@ -59,6 +60,7 @@ async def LLMConverse(client, user_name, user_input):
                   + llm_current_user_conversation_history \
                   + [{"role": "user", "name": user_name, "content": user_input}]
 
+    # This is where we get some lag, and most likely the discord api time outs, im not sure what to do with that
     response = chat(model='flukebot', messages=full_prompt)
 
     # Add the response to the messages to maintain the history
