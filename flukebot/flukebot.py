@@ -19,6 +19,7 @@ BOT_SERVER_ID = os.getenv("GMCD_SERVER_ID")
 BOT_DM_CHANNEL_ID = os.getenv("DM_CHANNEL_ID")
 GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_D")
 GMC_NO_CONTEXT_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_NC")
+BOT_TEST_SERVER_ID = os.getenv("TEST_SERVER_ID")
 
 
 # set discord intents
@@ -67,7 +68,7 @@ async def on_ready():
     # When the bot has logged in, call back
     print(f'We have logged in as {client.user}')
     global emote_dict
-    emote_dict = gather_server_emotes(client, BOT_SERVER_ID)
+    emote_dict = gather_server_emotes(client, BOT_SERVER_ID, BOT_TEST_SERVER_ID)
 
 
 @client.event
@@ -102,7 +103,7 @@ async def history(ctx, arg=None):
 async def llm_chat(message, username, message_content):
 
     async with message.channel.typing():
-        response = await ollama_response(client, username, message_content, False)
+        response = await ollama_response(client, username, message_content)
 
     if response == -1:
         return
@@ -162,6 +163,9 @@ async def on_message(message):
             output = await bc.command_delete_history(username)
             await message.channel.send(output)
             return
+
+        await llm_chat(message, message.author.name, message_lower)
+        return
 
     # replying to bot directly
     if message.reference:

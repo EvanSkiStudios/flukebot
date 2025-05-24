@@ -72,8 +72,14 @@ Along with the normal emojis, you may also respond with any of the names of an s
 'gmscog' Description: a image of the green gamemaker cog logo,
 'gmhammer' Description: a image of the red gamemaker hammer logo,
 'gms2' Description: a image of the gamemaker studio logo,
-'emoji_50' Description: a image of the gamemaker cog logo that looks like a green snake
+'emoji_50' Description: a image of the gamemaker cog logo that looks like a green snake,
 """
+
+custom_emojis_two = """
+'dancing_raccoon' Description: a image of a dancing raccoon,
+'bongo_raccoon' Description: a image of a raccoon waving their hands
+"""
+
 
 reconfirmation = """
 To use one of these special emoji's instead simply respond with the name of the emoji in the list.
@@ -87,7 +93,7 @@ async def llm_emoji_react_to_message(content, emote_dict):
     response = await client.chat(
         model='llama3.2',
         messages=[
-            {"role": "system", "content": dictation_rules + custom_emojis + reconfirmation},
+            {"role": "system", "content": dictation_rules + custom_emojis + custom_emojis_two + reconfirmation},
             {"role": "user", "content": content}
         ],
         options={'temperature': 0},  # Make responses more deterministic
@@ -95,10 +101,14 @@ async def llm_emoji_react_to_message(content, emote_dict):
 
     output = response.message.content
     output = output.replace("'", "").strip()
+    print(f"{output}")
     if not is_emoji(output):
         custom_emoji = emote_dict.get(output)
         if custom_emoji is not None:
             output = f'<:{output}:{custom_emoji}>'
+            # todo: animated emojis require a:{output}:{custom_emoji} for some reason
+            #  - change this so if the bot responds with the format then use it
+            #  - might change the prompt to just use the correct syntax
         else:
             # print(f"{response.message.content}")
             # print(f"INVALID REACTION: {output}")
@@ -106,10 +116,18 @@ async def llm_emoji_react_to_message(content, emote_dict):
     return output
 
 
-def gather_server_emotes(client, bot_server_id):
+def gather_server_emotes(client, bot_server_id, test_server_id):
     emote_dict = {}
     guild = client.get_guild(int(bot_server_id))
     if guild is not None:
         for emote in guild.emojis:
             emote_dict[emote.name] = emote.id
+
+    # hack for another server list of emojis
+    guild = client.get_guild(int(test_server_id))
+    if guild is not None:
+        for emote in guild.emojis:
+            emote_dict[emote.name] = emote.id
+
+    print(emote_dict)
     return emote_dict

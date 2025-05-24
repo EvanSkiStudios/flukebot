@@ -4,12 +4,10 @@ import ollama
 
 from ollama import Client, chat, ChatResponse
 
-from flukebot_filter import LLM_Filter_Message
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations
 from meet_the_robinsons import fetch_chatter_description
 
-from flukebot_tools import google_search_tool
 from utility import split_response, current_date_time
 
 flukebot_rules = flukebot_personality
@@ -63,19 +61,14 @@ async def LLMConverse(client, user_name, user_input):
         # search through memory cache for user
         # print(f"{LLM_memory_cache}")
 
-        user_convo_history = []
-
         # Loop through and check for the user
-        found_user_cache = False
-        if str(user_name) in LLM_memory_cache:
-            json_string = LLM_memory_cache[str(user_name)]
+        json_string = LLM_memory_cache.get(user_name)
+        if json_string is not None:
             data = json.loads(json_string)
             print(f"✅ FOUND USER CACHE FOR {user_name}")
-            found_user_cache = True
             user_convo_history = data
-
-        # if we don't already have the user in our memory cache, we need to get it
-        if not found_user_cache:
+        else:
+            # if we don't already have the user in our memory cache, we need to get it
             user_convo_history = await memory_fetch_user_conversations(user_name)
 
         # set short term memories to the memories we have fetched
@@ -84,7 +77,7 @@ async def LLMConverse(client, user_name, user_input):
         # set the information behind the user
         chatter_user_information = fetch_chatter_description(user_name)
 
-        # set current chatter to who we are talking too now
+    # set current chatter to who we are talking too now
     LLM_current_chatter = user_name
 
     # print(f"{LLM_Current_Conversation_History}")
