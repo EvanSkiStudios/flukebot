@@ -2,6 +2,9 @@ import datetime
 
 
 def split_response(response, max_len=2000):
+    if len(response) < 2000:
+        return [response]
+
     chunks = []
     while len(response) > max_len:
         # Find the last space or line break within the first max_len characters

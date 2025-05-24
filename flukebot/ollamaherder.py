@@ -1,27 +1,31 @@
 import json
-
-import ollama
-
 from ollama import Client, chat, ChatResponse
-
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations
 from meet_the_robinsons import fetch_chatter_description
+from utility import split_response
 
-from utility import split_response, current_date_time
-
+# import from ruleset must be made a global variable
 flukebot_rules = flukebot_personality
 
 # memories
-LLM_current_chatter = None
-LLM_Current_Conversation_History = []
-LLM_memory_cache = {}
-chatter_user_information = ""
+llm_current_user_speaking_too = None
+llm_current_user_conversation_history = []
+llm_session_memory_cache = {}
+current_chatter_character_information = ""
 
 
+def get_llm_state_snapshot():
+    return (
+        llm_current_user_conversation_history,
+        llm_current_user_speaking_too,
+        llm_session_memory_cache,
+        current_chatter_character_information
+    )
+
+
+# === Setup ===
 def LLMStartup():
-    global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache, chatter_user_information
-
     client = Client()
     response = client.create(
         model='flukebot',
@@ -30,102 +34,84 @@ def LLMStartup():
         stream=False,
     )
     print(f"# Client: {response.status}")
-    return LLM_Current_Conversation_History, LLM_current_chatter, LLM_memory_cache, chatter_user_information
+    return get_llm_state_snapshot()
 
 
+# === Main Entry Point ===
 async def ollama_response(bot_client, message_author_name, message_content):
-    LLMResponse = await LLMConverse(bot_client, message_author_name, message_content)
-    response = (LLMResponse
-                .replace("'", "\'")
-                .replace("evanski_", "Evanski")
-                .replace("Evanski_", "Evanski")
-                )
-
-    # discord message limit
-    if len(response) > 2000:
-        response = split_response(response)
-    else:
-        response = [response]
-
-    return response
+    llm_response = await LLMConverse(bot_client, message_author_name, message_content)
+    cleaned = (
+        llm_response.replace("'", "\'")
+        .replace("evanski_", "Evanski")
+        .replace("Evanski_", "Evanski")
+    )
+    return split_response(cleaned)
 
 
+# === Core Logic ===
 async def LLMConverse(client, user_name, user_input):
-    global LLM_Current_Conversation_History, LLM_current_chatter, flukebot_rules, LLM_memory_cache, chatter_user_information
-
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
     # if it's a different user, cache the current history to file the swap out the memories
-    if user_name != LLM_current_chatter:
-        print(f"⚠️ SWITCHING CONVERSER FROM {LLM_current_chatter} > {user_name}")
+    await switch_current_user_speaking_too(user_name)
 
-        # search through memory cache for user
-        # print(f"{LLM_memory_cache}")
+    system_prompt = build_system_prompt(user_name)
+    full_prompt = [{"role": "system", "content": system_prompt + "Here is what they have said to you: "}] \
+                  + llm_current_user_conversation_history \
+                  + [{"role": "user", "name": user_name, "content": user_input}]
 
-        # Loop through and check for the user
-        json_string = LLM_memory_cache.get(user_name)
-        if json_string is not None:
-            data = json.loads(json_string)
-            print(f"✅ FOUND USER CACHE FOR {user_name}")
-            user_convo_history = data
-        else:
-            # if we don't already have the user in our memory cache, we need to get it
-            user_convo_history = await memory_fetch_user_conversations(user_name)
-
-        # set short term memories to the memories we have fetched
-        LLM_Current_Conversation_History = user_convo_history
-
-        # set the information behind the user
-        chatter_user_information = fetch_chatter_description(user_name)
-
-    # set current chatter to who we are talking too now
-    LLM_current_chatter = user_name
-
-    # print(f"{LLM_Current_Conversation_History}")
-
-    current_time = current_date_time()
-
-    flukebot_context = f"""
-You are currently talking to {user_name}, their name is {user_name},
-if the person you are chatting too asks what their name is, you know their name as {user_name}.
-if {user_name} mentions flukebot in any context, its safe to assume they are talking about you,
-and not some other entity called flukebot.
-
-"""
-
-    flukebot_system_prompt = flukebot_rules + current_time + flukebot_context + chatter_user_information
-
-    # continue as normal
-    response = chat(
-        model='flukebot',
-        messages=[
-                     {"role": "system", "content": flukebot_system_prompt + "Here is what they have said to you: "}
-                 ] + LLM_Current_Conversation_History + [
-            {"role": "user", "name": user_name, "content": user_input}
-                                                        ],
-    )
+    response = chat(model='flukebot', messages=full_prompt)
 
     # Add the response to the messages to maintain the history
-    chat_new_history = [
+    new_chat_entries = [
         {"role": "user", "name": user_name, "content": user_input},
         {"role": "assistant", "content": response.message.content},
     ]
-    LLM_Current_Conversation_History += chat_new_history
+    update_conversation_history(user_name, new_chat_entries)
 
     # Debug Console Output
     print("\n===================================\n")
-
     print(f"{user_name} REPLY:\n" + user_input + '\n')
     print("RESPONSE:\n" + response.message.content)
-
     print("\n===================================\n")
-
-    # add chat to memory cache
-    json_string = json.dumps(LLM_Current_Conversation_History)
-    LLM_memory_cache[user_name] = json_string
-    # print(f"{LLM_memory_cache}")
-
-    # Append the url reference of the memory to file
-    convo_write_memories(user_name, chat_new_history)
 
     # return the message to main script
     return response.message.content
+
+
+# === Helpers ===
+async def switch_current_user_speaking_too(user_name):
+    global llm_current_user_speaking_too
+    global llm_current_user_conversation_history
+    global current_chatter_character_information
+
+    if user_name == llm_current_user_speaking_too:
+        return
+
+    print(f"⚠️ SWITCHING CONVERSER FROM {llm_current_user_speaking_too} > {user_name}")
+
+    # check if we have already spoken to this person this session
+    cached = llm_session_memory_cache.get(user_name)
+    if cached:
+        print(f"✅ FOUND USER CACHE FOR {user_name}")
+        llm_current_user_conversation_history[:] = json.loads(cached)
+    else:
+        llm_current_user_conversation_history[:] = await memory_fetch_user_conversations(user_name)
+
+    current_chatter_character_information = fetch_chatter_description(user_name)
+    llm_current_user_speaking_too = user_name
+
+
+def build_system_prompt(user_name):
+    return (
+            flukebot_rules +
+            f"You are currently talking to {user_name}. Their name is {user_name}.\n"
+            f"If the person you are chatting with asks what their name is, it is {user_name}.\n"
+            f"If {user_name} mentions flukebot, assume they mean you.\n"
+            + current_chatter_character_information
+    )
+
+
+def update_conversation_history(user_name, new_messages):
+    llm_current_user_conversation_history.extend(new_messages)
+    llm_session_memory_cache[user_name] = json.dumps(llm_current_user_conversation_history)
+    convo_write_memories(user_name, new_messages)

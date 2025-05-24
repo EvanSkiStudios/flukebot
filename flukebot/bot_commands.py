@@ -4,7 +4,7 @@ import random
 import discord
 
 from long_term_memory import convo_delete_history
-from ollamaherder import LLM_Current_Conversation_History
+from ollamaherder import llm_current_user_conversation_history
 
 
 def command_set_activity(current_activity=None):

@@ -101,7 +101,7 @@ async def llm_emoji_react_to_message(content, emote_dict):
 
     output = response.message.content
     output = output.replace("'", "").strip()
-    print(f"{output}")
+    # print(f"{output}")
     if not is_emoji(output):
         custom_emoji = emote_dict.get(output)
         if custom_emoji is not None:
@@ -129,5 +129,5 @@ def gather_server_emotes(client, bot_server_id, test_server_id):
         for emote in guild.emojis:
             emote_dict[emote.name] = emote.id
 
-    print(emote_dict)
+    # print(emote_dict)
     return emote_dict
