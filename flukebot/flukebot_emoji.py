@@ -123,24 +123,21 @@ async def llm_emoji_react_to_message(content, emote_dict):
     reaction_list = []
     for emote in emoji_list:
 
-        # check if its a normal emoji
+        # check if it's a normal emoji
         if is_emoji(emote):
             reaction_list.append(emote)
             continue
 
-        # if its not check if its a special emoji
+        # if it's not check if it's a special emoji
         custom_emoji = emote_dict.get(emote)
         if custom_emoji is not None:
             custom_emote = f'<:{emote}:{custom_emoji}>'
             # todo: animated emojis require a:{output}:{custom_emoji} for some reason
             #  - change this so if the bot responds with the format then use it
-            #  - might change the prompt to just use the correct syntax
             reaction_list.append(custom_emote)
             continue
 
         # finally just do no reaction as its garbage
-        # print(f"{response.message.content}")
-        # print(f"INVALID REACTION: {output}")
         reaction_list.append("no reaction")
     return reaction_list
 
