@@ -23,18 +23,36 @@ def split_text_and_emojis(s):
     return regex.findall(r'\p{Emoji}|\w+|\s+|[^\w\s]', s)
 
 
+def extract_emojis_and_words(text):
+    # \X matches grapheme clusters (i.e. user-perceived characters)
+    clusters = regex.findall(r'\X', text)
+
+    result = []
+    for cluster in clusters:
+        # Check if the whole cluster contains at least one emoji code point
+        if regex.search(r'\p{Emoji}', cluster):
+            result.append(cluster)
+        elif not cluster.isspace():  # Skip whitespace
+            result.append(cluster)
+
+    return result
+
+
 def clean_split(s):
     # Get tokens
-    tokens = split_text_and_emojis(s)
+    tokens = extract_emojis_and_words(s)
+
     # Strip whitespace tokens and remove empty ones
     return [t for t in tokens if not t.isspace() and t != '']
 
 
-dictation_rules = ("You are a simple input output machine. \
-The user will feed you a chat message. If you feel strongly about the message, \
-reply with a single or multiple emojis. Otherwise, respond with \"No reaction\". \
-You are only allowed to speak with emoji or only \"No reaction\"."
-                   )
+dictation_rules = (
+    "You are a simple input output machine. \
+    The user will feed you a chat message. If you feel strongly about the message, \
+    reply with a single or multiple emojis. Otherwise, respond with \"No reaction\". \
+    You are only allowed to speak with emoji or only \"No reaction\". \
+    Try to keep the max amount emojis in a response to 3 at most."
+)
 
 custom_emojis = """
 Along with the normal emojis, you may also respond with any of the names of an special emoji in the following list:
@@ -131,9 +149,7 @@ async def llm_emoji_react_to_message(content, emote_dict):
         # if it's not check if it's a special emoji
         custom_emoji = emote_dict.get(emote)
         if custom_emoji is not None:
-            custom_emote = f'<:{emote}:{custom_emoji}>'
-            # todo: animated emojis require a:{output}:{custom_emoji} for some reason
-            #  - change this so if the bot responds with the format then use it
+            custom_emote = f'<a:{emote}:{custom_emoji}>'
             reaction_list.append(custom_emote)
             continue
 

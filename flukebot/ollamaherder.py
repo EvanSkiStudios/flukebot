@@ -1,7 +1,7 @@
 import json
 from ollama import Client, chat, ChatResponse
 from flukebot_ruleset import flukebot_personality
-from long_term_memory import convo_write_memories, memory_fetch_user_conversations
+from long_term_memory import convo_write_memories, memory_fetch_user_conversations, random_factoids
 from meet_the_robinsons import fetch_chatter_description
 from utility import split_response
 
@@ -40,7 +40,6 @@ def LLMStartup():
 # === Main Entry Point ===
 async def ollama_response(bot_client, message_author_name, message_content):
     llm_response = await LLMConverse(bot_client, message_author_name, message_content)
-    print(f"HAVE RESPONSE, CLEANING AND RETURNING")
     cleaned = (
         llm_response.replace("'", "\'")
         .replace("evanski_", "Evanski")
@@ -104,8 +103,11 @@ async def switch_current_user_speaking_too(user_name):
 
 
 def build_system_prompt(user_name):
+    factoids = random_factoids()
+
     return (
             flukebot_rules +
+            factoids +
             f"You are currently talking to {user_name}. Their name is {user_name}.\n"
             f"If the person you are chatting with asks what their name is, it is {user_name}.\n"
             f"If {user_name} mentions flukebot, assume they mean you.\n"

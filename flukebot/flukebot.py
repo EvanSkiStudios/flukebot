@@ -116,10 +116,13 @@ async def llm_chat(message, username, message_content):
 
 async def react_to_messages(message, message_lower):
     global emote_dict
+
     # reaction
     reaction = await llm_emoji_react_to_message(message_lower, emote_dict)
+
     # discord limits by 20 reactions
-    reaction = reaction[:20]
+    limit = 20 - len(message.reactions)
+    reaction = reaction[:limit]
     for emoji in reaction:
         if emoji.find('no reaction') == -1:
             await message.add_reaction(emoji)
