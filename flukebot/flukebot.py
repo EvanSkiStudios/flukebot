@@ -62,6 +62,7 @@ LLMStartup()
 
 emote_dict = {}
 
+
 # --------- BOT EVENTS ---------
 @client.event
 async def on_ready():
