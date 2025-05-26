@@ -16,13 +16,6 @@ def is_emoji(text):
     return text in emoji.EMOJI_DATA
 
 
-def split_text_and_emojis(s):
-    # This pattern matches either:
-    # - One or more emoji grapheme clusters (\X with \p{Emoji})
-    # - Or a word of non-emoji characters
-    return regex.findall(r'\p{Emoji}|\w+|\s+|[^\w\s]', s)
-
-
 def extract_emojis_and_words(text):
     # \X matches grapheme clusters (i.e. user-perceived characters)
     clusters = regex.findall(r'\X', text)
