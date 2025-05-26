@@ -24,12 +24,17 @@ def get_llm_state_snapshot():
     )
 
 
+# model settings for easy swapping
+flukebot_model_name = 'flukebot_gemma3'
+flukebot_ollama_model = 'gemma3'
+
+
 # === Setup ===
 def LLMStartup():
     client = Client()
     response = client.create(
-        model='flukebot',
-        from_='llama3.2',
+        model=flukebot_model_name,
+        from_=flukebot_ollama_model,
         system=flukebot_rules,
         stream=False,
     )
@@ -60,7 +65,7 @@ async def LLMConverse(client, user_name, user_input):
                   + [{"role": "user", "name": user_name, "content": user_input}]
 
     # This is where we get some lag, and most likely the discord api time outs, im not sure what to do with that
-    response = chat(model='flukebot', messages=full_prompt)
+    response = chat(model=flukebot_model_name, messages=full_prompt)
 
     # Add the response to the messages to maintain the history
     new_chat_entries = [

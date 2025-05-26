@@ -128,6 +128,9 @@ async def llm_emoji_react_to_message(content, emote_dict):
     output = response.message.content
     output = output.replace("'", "").strip()
 
+    if output.lower() == "no reaction":
+        output = ""
+
     # split response into an array
     emoji_list = clean_split(output)
 
