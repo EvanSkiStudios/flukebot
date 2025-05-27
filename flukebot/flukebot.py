@@ -7,20 +7,20 @@ import bot_commands as bc
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from flukebot_emoji import llm_emoji_react_to_message, gather_server_emotes
+from chat_summarizer import summarize_chat
+from emoji_reactions_manager import llm_emoji_react_to_message, gather_server_emotes
 from ollamaherder import ollama_response, LLMStartup
-
 
 # Load Env
 load_dotenv()
 BOT_TOKEN = os.getenv("TOKEN")
 BOT_APPLICATION_ID = os.getenv("APPLICATION_ID")
 BOT_SERVER_ID = os.getenv("GMCD_SERVER_ID")
+BOT_TEST_SERVER_ID = os.getenv("TEST_SERVER_ID")
 BOT_DM_CHANNEL_ID = os.getenv("DM_CHANNEL_ID")
+BOT_CHANNEL_ID = os.getenv("GMCD_CHANNEL_ID")
 GMC_DISCUSSION_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_D")
 GMC_NO_CONTEXT_THREAD = os.getenv("GMCD_NOT_ALLOWED_THREAD_NC")
-BOT_TEST_SERVER_ID = os.getenv("TEST_SERVER_ID")
-
 
 # set discord intents
 intents = discord.Intents.default()
@@ -37,6 +37,8 @@ client = commands.Bot(
     activity=activity_status,
     status=discord.Status.online
 )
+
+emote_dict = {}
 
 
 class MyHelpCommand(commands.HelpCommand):
@@ -56,11 +58,8 @@ Commands are issued like so: `$fb <command> <argument>`
 # assign help command from bot_commands
 client.help_command = MyHelpCommand()
 
-
 # Startup LLM
 LLMStartup()
-
-emote_dict = {}
 
 
 # --------- BOT EVENTS ---------
@@ -118,15 +117,20 @@ async def llm_chat(message, username, message_content):
 async def react_to_messages(message, message_lower):
     global emote_dict
 
-    # reaction
-    reaction = await llm_emoji_react_to_message(message_lower, emote_dict)
+    try:
+        # reaction
+        reaction = await llm_emoji_react_to_message(message_lower, emote_dict)
 
-    # discord limits by 20 reactions
-    limit = 20 - len(message.reactions)
-    reaction = reaction[:limit]
-    for emoji in reaction:
-        if emoji.find('no reaction') == -1:
-            await message.add_reaction(emoji)
+        # discord limits by 20 reactions
+        limit = 20 - len(message.reactions)
+        reaction = reaction[:limit]
+        for emoji in reaction:
+            if emoji.find('no reaction') == -1:
+                await message.add_reaction(emoji)
+
+    except discord.HTTPException as e:
+        print(f"⚠️ {type(e).__name__} - {e}")
+        pass  # Suppresses all API-related errors (e.g., invalid emoji, rate limit)
 
 
 @client.event
@@ -136,13 +140,17 @@ async def on_message(message):
     message_lower = message.content.lower()
     username = message.author.name
 
-    if message.author == client.user:
-        return
-
     if message.mention_everyone:
         return
 
     if message_lower.find(command_prefix) != -1:
+        return
+
+    # if str(message.channel.id) == BOT_CHANNEL_ID:
+        # noinspection PyAsyncCall
+        # asyncio.create_task(summarize_chat(username, message.content))
+
+    if message.author == client.user:
         return
 
     # noinspection PyAsyncCall
