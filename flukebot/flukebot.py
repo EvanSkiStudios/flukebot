@@ -67,8 +67,6 @@ LLMStartup()
 async def on_ready():
     # When the bot has logged in, call back
     print(f'We have logged in as {client.user}')
-    global emote_dict
-    emote_dict = gather_server_emotes(client, BOT_SERVER_ID, BOT_TEST_SERVER_ID)
 
 
 @client.event
@@ -81,6 +79,9 @@ async def on_connect():
     activity = bc.command_set_activity()
     new_status = discord.Status.online
     await client.change_presence(activity=activity, status=new_status)
+
+    global emote_dict
+    emote_dict = gather_server_emotes(client, BOT_SERVER_ID, BOT_TEST_SERVER_ID)
 
 
 @client.event
@@ -122,7 +123,7 @@ async def react_to_messages(message, message_lower):
         reaction = await llm_emoji_react_to_message(message_lower, emote_dict)
 
         # discord limits by 20 reactions
-        limit = 20 - len(message.reactions)
+        limit = 20
         reaction = reaction[:limit]
         for emoji in reaction:
             if emoji.find('no reaction') == -1:

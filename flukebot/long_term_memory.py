@@ -6,8 +6,8 @@ import json
 running_dir = os.path.dirname(os.path.realpath(__file__))
 memories_location = str(running_dir) + "\\memories\\"
 
-# get location of consent file
-consent_file_location = str(running_dir) + "\\memories\\"
+# details
+character_details_location = memories_location + "\\meet_the_robinsons\\"
 
 
 def random_factoids():
@@ -24,7 +24,23 @@ def random_factoids():
 
     result = ''.join(line .strip() for line in data)
 
-    return "Here is a few random facts you know: " + result
+    factoids = "Here is a few random facts you know: " + result
+
+    people_we_know = ''
+    for filename in os.listdir(character_details_location):
+        file_path = os.path.join(character_details_location, filename)
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as file:
+                contents = file.read()
+                try:
+                    facts = json.loads(contents)  # Convert JSON string to Python list
+                    joined_facts = "\n- ".join(facts)
+                    info = f"\nThis is what you know about {filename.replace('.json', '')}:\n- {joined_facts}"
+                    people_we_know += info
+                except json.JSONDecodeError:
+                    print(f"Warning: Could not parse {filename} as JSON.")
+
+    return factoids + people_we_know
 
 
 def convo_delete_history(username):
@@ -38,7 +54,7 @@ def convo_delete_history(username):
 
 
 def convo_write_memories(username, conversation_data):
-    consent_file = os.path.join(consent_file_location, "__consent_users.json")
+    consent_file = os.path.join(memories_location, "__consent_users.json")
 
     if not os.path.exists(consent_file):
         print("❌❌❌ Can not find user consent file!!")

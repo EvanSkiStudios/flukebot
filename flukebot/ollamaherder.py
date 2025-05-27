@@ -1,9 +1,12 @@
 import json
-from ollama import Client, chat, ChatResponse
+import asyncio
+
+import ollama
+from ollama import Client, chat, ChatResponse, AsyncClient
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations, random_factoids
 from meet_the_robinsons import fetch_chatter_description
-from utility import split_response
+from utility import split_response, current_date_time
 
 # import from ruleset must be made a global variable
 flukebot_rules = flukebot_personality
@@ -47,8 +50,6 @@ async def ollama_response(bot_client, message_author_name, message_content):
     llm_response = await LLMConverse(bot_client, message_author_name, message_content)
     cleaned = (
         llm_response.replace("'", "\'")
-        .replace("evanski_", "Evanski")
-        .replace("Evanski_", "Evanski")
     )
     return split_response(cleaned)
 
@@ -64,8 +65,11 @@ async def LLMConverse(client, user_name, user_input):
                   + llm_current_user_conversation_history \
                   + [{"role": "user", "name": user_name, "content": user_input}]
 
-    # This is where we get some lag, and most likely the discord api time outs, im not sure what to do with that
-    response = chat(model=flukebot_model_name, messages=full_prompt)
+    # This is where we get some lag, and most likely the discord api time-outs, im not sure what to do with that
+    # response = chat(model=flukebot_model_name, messages=full_prompt)
+
+    # should prevent discord heartbeat from complaining we are taking too long
+    response = await asyncio.to_thread(chat, model=flukebot_model_name, messages=full_prompt)
 
     # Add the response to the messages to maintain the history
     new_chat_entries = [
@@ -109,10 +113,10 @@ async def switch_current_user_speaking_too(user_name):
 
 def build_system_prompt(user_name):
     factoids = random_factoids()
-
+    current_time = current_date_time()
     return (
             flukebot_rules +
-            factoids +
+            factoids + "\n" + current_time + "\n" +
             f"You are currently talking to {user_name}. Their name is {user_name}.\n"
             f"If the person you are chatting with asks what their name is, it is {user_name}.\n"
             f"If {user_name} mentions flukebot, assume they mean you.\n"
