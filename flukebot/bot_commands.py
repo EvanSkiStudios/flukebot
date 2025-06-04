@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import random
@@ -5,6 +6,7 @@ import discord
 
 from long_term_memory import convo_delete_history
 from ollamaherder import llm_current_user_conversation_history
+from utility_scripts.quick_llm import quick_LLM
 
 
 def command_set_activity(current_activity=None):
@@ -14,6 +16,8 @@ def command_set_activity(current_activity=None):
         discord.Activity(type=discord.ActivityType.listening, name='Harry Dacre - "Daisy Bell (Bicycle Built for Two)"'),
         discord.Activity(type=discord.ActivityType.watching, name="Shrek 7"),
         discord.CustomActivity(name="Writing Mercanski fanfiction", emoji=' '),
+        discord.CustomActivity(name="Cheering Alyssa on!", emoji='🥳'),
+        discord.CustomActivity(name="<coroutine object FlukeBot at 0x000001DE9B6F6240>", emoji=' '),
         None  # Clear status
     ]
 
@@ -162,3 +166,34 @@ async def command_delete_history(user):
 
     return return_message + "\n" + outcome_message
 
+
+async def command_delete(client, ctx, arg):
+    messages = arg.split(',')
+
+    deleted = []
+    failed = []
+
+    for msg_id in messages:
+        try:
+            msg_id = int(msg_id)
+            msg = await ctx.channel.fetch_message(msg_id)
+            if msg.author == client.user:
+                await msg.delete()
+                deleted.append(msg_id)
+            else:
+                failed.append((msg_id, "Not sent by bot"))
+        except discord.NotFound:
+            failed.append((msg_id, "Message not found"))
+        except discord.Forbidden:
+            failed.append((msg_id, "Missing permissions"))
+        except discord.HTTPException as e:
+            failed.append((msg_id, f"HTTP error: {e}"))
+
+    report = []
+    if deleted:
+        report.append(f"✅ Deleted: {', '.join(map(str, deleted))}")
+    if failed:
+        report.append("❌ Failed:\n" + "\n".join(f"{i}: {reason}" for i, reason in failed))
+
+    print(report)
+    await ctx.send("Deleted: (" + str(len(deleted)) + ") Messages", delete_after=10)

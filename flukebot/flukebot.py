@@ -7,9 +7,9 @@ import bot_commands as bc
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from chat_summarizer import summarize_chat
 from emoji_reactions_manager import llm_emoji_react_to_message, gather_server_emotes
 from ollamaherder import ollama_response, LLMStartup
+
 
 # Load Env
 load_dotenv()
@@ -100,10 +100,15 @@ async def history(ctx, arg=None):
     await bc.command_history(ctx, arg)
 
 
+@client.command(help="Deletes the supplied Flukebot messages by id")
+async def delete(ctx, *, arg=None):
+    await bc.command_delete(client, ctx, arg)
+
+
 # ------- MESSAGE HANDLERS ---------
-async def llm_chat(message, username, message_content):
+async def llm_chat(message, username, usernickname, message_content):
     async with message.channel.typing():
-        response = await ollama_response(client, username, message_content)
+        response = await ollama_response(client, username, usernickname, message_content)
 
     if response == -1:
         return
@@ -134,16 +139,21 @@ async def react_to_messages(message, message_lower):
         pass  # Suppresses all API-related errors (e.g., invalid emoji, rate limit)
 
 
+channels_blacklist = [GMC_DISCUSSION_THREAD, GMC_NO_CONTEXT_THREAD]
+
+
 @client.event
 async def on_message(message):
     await client.process_commands(message)  # This line is required!
 
+    print(message.content)
+
     message_lower = message.content.lower()
     username = message.author.name
+    usernickname = message.author.display_name
 
     if message.mention_everyone:
         return
-
     if message_lower.find(command_prefix) != -1:
         return
 
@@ -154,15 +164,13 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+
     # noinspection PyAsyncCall
     asyncio.create_task(react_to_messages(message, message_lower))
     # task.add_done_callback(lambda t: t.exception())  # Prevent warning if task crashes
     #  -- Its fine we don't care if it returns
 
-    if str(message.channel.id) == GMC_DISCUSSION_THREAD:
-        return
-
-    if str(message.channel.id) == GMC_NO_CONTEXT_THREAD:
+    if str(message.channel.id) in channels_blacklist:
         return
 
     # DMs
@@ -179,7 +187,7 @@ async def on_message(message):
             await message.channel.send(output)
             return
 
-        await llm_chat(message, message.author.name, message_lower)
+        await llm_chat(message, username, usernickname, message_lower)
         return
 
     # replying to bot directly
@@ -187,18 +195,18 @@ async def on_message(message):
         referenced_message = await message.channel.fetch_message(message.reference.message_id)
         if referenced_message.author == client.user:
             message_content = message_lower.replace(f"<@{BOT_APPLICATION_ID}>", "")
-            await llm_chat(message, message.author.name, message_content)
+            await llm_chat(message, username, usernickname, message_content)
             return
 
     # Pinging the bot
     if message_lower.find(str(BOT_APPLICATION_ID)) != -1:
         message_content = message_lower.replace(f"<@{BOT_APPLICATION_ID}> ", "")
-        await llm_chat(message, message.author.name, message_content)
+        await llm_chat(message, username, usernickname, message_content)
         return
 
     # if the message includes "flukebot" it will trigger and run the code
     if message_lower.find('flukebot') != -1:
-        await llm_chat(message, message.author.name, message_lower)
+        await llm_chat(message, username, usernickname, message_lower)
         return
 
 

@@ -46,8 +46,8 @@ def LLMStartup():
 
 
 # === Main Entry Point ===
-async def ollama_response(bot_client, message_author_name, message_content):
-    llm_response = await LLMConverse(bot_client, message_author_name, message_content)
+async def ollama_response(bot_client, message_author_name, message_author_nickname, message_content):
+    llm_response = await LLMConverse(bot_client, message_author_name, message_author_nickname, message_content)
     cleaned = (
         llm_response.replace("'", "\'")
     )
@@ -55,12 +55,12 @@ async def ollama_response(bot_client, message_author_name, message_content):
 
 
 # === Core Logic ===
-async def LLMConverse(client, user_name, user_input):
+async def LLMConverse(client, user_name, user_nickname, user_input):
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
     # if it's a different user, cache the current history to file the swap out the memories
     await switch_current_user_speaking_too(user_name)
 
-    system_prompt = build_system_prompt(user_name)
+    system_prompt = build_system_prompt(user_name, user_nickname)
     full_prompt = [{"role": "system", "content": system_prompt + "Here is what they have said to you: "}] \
                   + llm_current_user_conversation_history \
                   + [{"role": "user", "name": user_name, "content": user_input}]
@@ -69,7 +69,11 @@ async def LLMConverse(client, user_name, user_input):
     # response = chat(model=flukebot_model_name, messages=full_prompt)
 
     # should prevent discord heartbeat from complaining we are taking too long
-    response = await asyncio.to_thread(chat, model=flukebot_model_name, messages=full_prompt)
+    response = await asyncio.to_thread(
+        chat,
+        model=flukebot_model_name,
+        messages=full_prompt
+    )
 
     # Add the response to the messages to maintain the history
     new_chat_entries = [
@@ -111,14 +115,15 @@ async def switch_current_user_speaking_too(user_name):
     llm_current_user_speaking_too = user_name
 
 
-def build_system_prompt(user_name):
+def build_system_prompt(user_name, user_nickname):
     factoids = random_factoids()
     current_time = current_date_time()
     return (
             flukebot_rules +
             factoids + "\n" + current_time + "\n" +
-            f"You are currently talking to {user_name}. Their name is {user_name}.\n"
-            f"If the person you are chatting with asks what their name is, it is {user_name}.\n"
+            f"You are currently talking to {user_name}. Their name is {user_name}.\n" +
+            f"Their display name is {user_nickname}.\n" +
+            f"If the person you are chatting with asks what their name is, use their display name.\n" +
             f"If {user_name} mentions flukebot, assume they mean you.\n"
             + current_chatter_character_information
     )
