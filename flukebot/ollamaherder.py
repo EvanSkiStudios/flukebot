@@ -116,7 +116,8 @@ async def switch_current_user_speaking_too(user_name):
 
 
 def build_system_prompt(user_name, user_nickname):
-    factoids = random_factoids()
+    # factoids = random_factoids()
+    factoids = ""
     current_time = current_date_time()
     return (
             flukebot_rules +

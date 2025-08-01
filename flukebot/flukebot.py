@@ -105,6 +105,11 @@ async def delete(ctx, *, arg=None):
     await bc.command_delete(client, ctx, arg)
 
 
+@client.command(help="Plays E1M1 of Doom")
+async def doom(ctx, *, arg=None):
+    await bc.command_doom(client, ctx, arg)
+
+
 # ------- MESSAGE HANDLERS ---------
 async def llm_chat(message, username, user_nickname, message_content):
     async with message.channel.typing():

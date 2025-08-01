@@ -197,3 +197,7 @@ async def command_delete(client, ctx, arg):
 
     print(report)
     await ctx.send("Deleted: (" + str(len(deleted)) + ") Messages", delete_after=10)
+
+
+async def command_doom(client, ctx, arg):
+    await ctx.send("doom")
