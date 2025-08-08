@@ -28,8 +28,8 @@ def get_llm_state_snapshot():
 
 
 # model settings for easy swapping
-flukebot_model_name = 'flukebot_gemma3'
-flukebot_ollama_model = 'gemma3'
+flukebot_model_name = 'flukebot_llama3.2'
+flukebot_ollama_model = 'llama3.2'
 
 
 # === Setup ===
@@ -46,8 +46,8 @@ def LLMStartup():
 
 
 # === Main Entry Point ===
-async def ollama_response(bot_client, message_author_name, message_author_nickname, message_content):
-    llm_response = await LLMConverse(bot_client, message_author_name, message_author_nickname, message_content)
+async def ollama_response(bot_client, message_author_name, message_author_nickname, message_content, image_description):
+    llm_response = await LLMConverse(bot_client, message_author_name, message_author_nickname, message_content, image_description)
     cleaned = (
         llm_response.replace("'", "\'")
     )
@@ -55,15 +55,20 @@ async def ollama_response(bot_client, message_author_name, message_author_nickna
 
 
 # === Core Logic ===
-async def LLMConverse(client, user_name, user_nickname, user_input):
+async def LLMConverse(client, user_name, user_nickname, user_input, image_description):
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
     # if it's a different user, cache the current history to file the swap out the memories
     await switch_current_user_speaking_too(user_name)
 
-    system_prompt = build_system_prompt(user_name, user_nickname)
+    image_description_prompt = ''
+    if image_description != '':
+        image_description_prompt = '\nThis message has an image attached, here is a description of the image: ' + image_description
+    print(image_description_prompt)
+
+    system_prompt = build_system_prompt(user_name, user_nickname, image_description)
     full_prompt = [{"role": "system", "content": system_prompt + "Here is what they have said to you: "}] \
                   + llm_current_user_conversation_history \
-                  + [{"role": "user", "name": user_name, "content": user_input}]
+                  + [{"role": "user", "name": user_name, "content": user_input + image_description_prompt}]
 
     # This is where we get some lag, and most likely the discord api time-outs, im not sure what to do with that
     # response = chat(model=flukebot_model_name, messages=full_prompt)
@@ -115,7 +120,7 @@ async def switch_current_user_speaking_too(user_name):
     llm_current_user_speaking_too = user_name
 
 
-def build_system_prompt(user_name, user_nickname):
+def build_system_prompt(user_name, user_nickname, image_description):
     # factoids = random_factoids()
     factoids = ""
     current_time = current_date_time()

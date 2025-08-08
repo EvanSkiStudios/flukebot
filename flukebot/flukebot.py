@@ -7,6 +7,7 @@ import bot_commands as bc
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from Tools import gemma_vision
 from emoji_reactions_manager import llm_emoji_react_to_message, gather_server_emotes
 from ollamaherder import ollama_response, LLMStartup
 
@@ -113,7 +114,17 @@ async def doom(ctx, *, arg=None):
 # ------- MESSAGE HANDLERS ---------
 async def llm_chat(message, username, user_nickname, message_content):
     async with message.channel.typing():
-        response = await ollama_response(client, username, user_nickname, message_content)
+        image_description = ''
+        if message.attachments:
+            for media in message.attachments:
+                if 'image' in str(media.content_type):
+                    image_description = await gemma_vision.image_recognition(media.url)
+        # else:
+        # print(message.content) #gifs from the pannel
+        if image_description == -1:
+            image_description = ''
+
+        response = await ollama_response(client, username, user_nickname, message_content, image_description)
 
     if response == -1:
         return
