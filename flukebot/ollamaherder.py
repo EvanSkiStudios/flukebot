@@ -180,17 +180,16 @@ async def switch_current_user_speaking_too(user_name):
 
 
 def build_system_prompt(user_name, user_nickname):
-    # factoids = random_factoids()
-    factoids = ""
+    factoids = random_factoids()
     current_time = current_date_time()
     return (
-            flukebot_rules +
-            factoids + "\n" + current_time + "\n" +
+            flukebot_rules + "\n" +
+            factoids + "\n" +
+            current_time + "\n" +
             f"You are currently talking to {user_name}. Their name is {user_name}.\n" +
             f"Their display name is {user_nickname}.\n" +
-            f"If the person you are chatting with asks what their name is, use their display name.\n" +
-            f"If {user_name} mentions flukebot, assume they mean you.\n"
-            + current_chatter_character_information
+            f"If {user_name} asks what their name is, use their display name.\n" +
+            current_chatter_character_information
     )
 
 
