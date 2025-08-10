@@ -3,10 +3,13 @@ import asyncio
 
 import ollama
 from ollama import Client, chat, ChatResponse, AsyncClient
+
+from Tools.gemma_vision import download_image, image_cleanup
 from flukebot_ruleset import flukebot_personality
 from long_term_memory import convo_write_memories, memory_fetch_user_conversations, random_factoids
 from meet_the_robinsons import fetch_chatter_description
 from utility import split_response, current_date_time
+from pathlib import Path
 
 # import from ruleset must be made a global variable
 flukebot_rules = flukebot_personality
@@ -46,29 +49,39 @@ def LLMStartup():
 
 
 # === Main Entry Point ===
-async def ollama_response(bot_client, message_author_name, message_author_nickname, message_content, image_description):
-    llm_response = await LLMConverse(bot_client, message_author_name, message_author_nickname, message_content, image_description)
-    cleaned = (
-        llm_response.replace("'", "\'")
-    )
+async def ollama_response(bot_client, message_author_name, message_author_nickname, message_content, attachment_url, attachments):
+    llm_response = None
+
+    if attachment_url:
+        loop = asyncio.get_event_loop()
+        image_file_name = await loop.run_in_executor(None, download_image, attachment_url)
+
+        if image_file_name:
+            llm_response = await gemma3_image_recognition(
+                bot_client, message_author_name, message_author_nickname, message_content, image_file_name, attachments
+            )
+        else:
+            print("IMAGE ERROR")
+
+    if llm_response is None:  # fallback to text-only LLM
+        llm_response = await LLMConverse(
+            bot_client, message_author_name, message_author_nickname, message_content
+        )
+
+    cleaned = llm_response.replace("'", "\\'")
     return split_response(cleaned)
 
 
 # === Core Logic ===
-async def LLMConverse(client, user_name, user_nickname, user_input, image_description):
+async def LLMConverse(client, user_name, user_nickname, user_input):
     # check who we are currently talking too - if someone new is talking to us, fetch their memories
     # if it's a different user, cache the current history to file the swap out the memories
     await switch_current_user_speaking_too(user_name)
 
-    image_description_prompt = ''
-    if image_description != '':
-        image_description_prompt = '\nThis message has an image attached, here is a description of the image: ' + image_description
-    print(image_description_prompt)
-
-    system_prompt = build_system_prompt(user_name, user_nickname, image_description)
+    system_prompt = build_system_prompt(user_name, user_nickname)
     full_prompt = [{"role": "system", "content": system_prompt + "Here is what they have said to you: "}] \
                   + llm_current_user_conversation_history \
-                  + [{"role": "user", "name": user_name, "content": user_input + image_description_prompt}]
+                  + [{"role": "user", "name": user_name, "content": user_input}]
 
     # This is where we get some lag, and most likely the discord api time-outs, im not sure what to do with that
     # response = chat(model=flukebot_model_name, messages=full_prompt)
@@ -97,6 +110,52 @@ async def LLMConverse(client, user_name, user_nickname, user_input, image_descri
     return response.message.content
 
 
+async def gemma3_image_recognition(client, user_name, user_nickname, user_input, image_file_name, attachments):
+    await switch_current_user_speaking_too(user_name)
+
+    # Go one directory up
+    parent_dir = Path(__file__).resolve().parent
+    path = parent_dir / 'images' / image_file_name
+
+    print(f'Analyzing image ({image_file_name})...\n')
+    print(attachments)
+    print('\n')
+
+    system_prompt = build_system_prompt(user_name, user_nickname)
+    full_prompt = [{"role": "system", "content": system_prompt + "Here is what they have said to you: "}] \
+                  + llm_current_user_conversation_history \
+
+
+    response = await asyncio.to_thread(
+        chat,
+        model='gemma3',
+        messages=full_prompt + [{"role": "user", "name": user_name, "content": user_input, 'images': [path]}]
+        # options={'temperature': 0},  # Make responses more deterministic
+    )
+
+    output = response.message.content
+    output = output.replace("'", "").strip()
+
+    # Add the response to the messages to maintain the history
+    new_chat_entries = [
+        {"role": "user", "name": user_name, "content": user_input, "attachments": str(attachments)},
+        {"role": "assistant", "content": output},
+    ]
+    update_conversation_history(user_name, new_chat_entries)
+
+    # Debug Console Output
+    print("\n===================================\n")
+    print(f"{user_name} REPLY:\n" + user_input + '\n')
+    print("RESPONSE:\n" + output)
+    print("\n===================================\n")
+
+    # clean up image
+    image_cleanup(image_file_name)
+
+    # return the message to main script
+    return output
+
+
 # === Helpers ===
 async def switch_current_user_speaking_too(user_name):
     global llm_current_user_speaking_too
@@ -120,7 +179,7 @@ async def switch_current_user_speaking_too(user_name):
     llm_current_user_speaking_too = user_name
 
 
-def build_system_prompt(user_name, user_nickname, image_description):
+def build_system_prompt(user_name, user_nickname):
     # factoids = random_factoids()
     factoids = ""
     current_time = current_date_time()

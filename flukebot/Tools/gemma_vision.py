@@ -43,7 +43,7 @@ def download_image(url):
         return filename
     else:  # HTTP status code 4XX/5XX
         print("Download failed: status code {}\n{}".format(r.status_code, r.text))
-        return -1
+        return None
 
 
 async def gemma3_image_recognition(image_file_name):

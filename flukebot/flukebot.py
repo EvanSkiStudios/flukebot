@@ -114,17 +114,17 @@ async def doom(ctx, *, arg=None):
 # ------- MESSAGE HANDLERS ---------
 async def llm_chat(message, username, user_nickname, message_content):
     async with message.channel.typing():
-        image_description = ''
+        attachment_url = None
+        attachments = None
         if message.attachments:
             for media in message.attachments:
-                if 'image' in str(media.content_type):
-                    image_description = await gemma_vision.image_recognition(media.url)
-        # else:
-        # print(message.content) #gifs from the pannel
-        if image_description == -1:
-            image_description = ''
+                content_type = str(media.content_type).lower()
+                attachment_url = media.url if content_type in ("image/png", "image/jpeg") else None
+                # Unhandled formats will give  (status code: 500) from the bot
+                attachments = message.attachments
+            # print(message.content) #gifs from the pannel are just message content
 
-        response = await ollama_response(client, username, user_nickname, message_content, image_description)
+        response = await ollama_response(client, username, user_nickname, message_content, attachment_url, attachments)
 
     if response == -1:
         return
