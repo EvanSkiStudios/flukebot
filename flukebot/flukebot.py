@@ -7,7 +7,6 @@ import bot_commands as bc
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from Tools import gemma_vision
 from emoji_reactions_manager import llm_emoji_react_to_message, gather_server_emotes
 from ollamaherder import ollama_response, LLMStartup
 
@@ -106,9 +105,9 @@ async def delete(ctx, *, arg=None):
     await bc.command_delete(client, ctx, arg)
 
 
-@client.command(help="Plays E1M1 of Doom")
-async def doom(ctx, *, arg=None):
-    await bc.command_doom(client, ctx, arg)
+@client.command(help="Sanity Check for input")
+async def ping(ctx, *, arg=None):
+    await ctx.send(f"Pong!")
 
 
 # ------- MESSAGE HANDLERS ---------
@@ -119,10 +118,12 @@ async def llm_chat(message, username, user_nickname, message_content):
         if message.attachments:
             for media in message.attachments:
                 content_type = str(media.content_type).lower()
-                attachment_url = media.url if content_type in ("image/png", "image/jpeg") else None
+                print(content_type)
+                attachment_url = media.url if content_type in ("image/png", "image/jpeg", "image/webp") else None
                 # Unhandled formats will give  (status code: 500) from the bot
                 attachments = message.attachments
-            # print(message.content) #gifs from the pannel are just message content
+                # currently only looks at one image if there are multiple
+            # print(message.content) # gifs from the panel are just message content - currently cant see gifs anyway
 
         response = await ollama_response(client, username, user_nickname, message_content, attachment_url, attachments)
 

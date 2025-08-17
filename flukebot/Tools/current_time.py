@@ -3,7 +3,6 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, Any, Callable
 
-
 def get_current_time() -> str:
     now = datetime.now()
     time = now.strftime("%I:%M %p")

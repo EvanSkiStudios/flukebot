@@ -40,7 +40,8 @@ def random_factoids():
                 except json.JSONDecodeError:
                     print(f"Warning: Could not parse {filename} as JSON.")
 
-    return factoids + people_we_know
+    #return factoids + people_we_know
+    return factoids
 
 
 def convo_delete_history(username):
