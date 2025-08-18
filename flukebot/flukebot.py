@@ -127,9 +127,8 @@ async def Flukebot_Converse_Image(user_name, user_nickname, user_input, image_fi
     parent_dir = Path(__file__).resolve().parent
     path = parent_dir / 'images' / image_file_name
 
-    print(f'Analyzing image ({image_file_name})...\n')
     print(attachments)
-    print('\n')
+    print(f'Analyzing image ({image_file_name})...')
 
     system_prompt = build_system_prompt(user_name, user_nickname)
     full_prompt = [{"role": "system", "content": system_prompt + "Here is what they have said to you: "}] \
@@ -155,6 +154,7 @@ async def Flukebot_Converse_Image(user_name, user_nickname, user_input, image_fi
     # Debug Console Output
     print("\n===================================\n")
     print(f"{user_name} REPLY:\n" + user_input + '\n')
+    print(attachments)
     print("RESPONSE:\n" + output)
     print("\n===================================\n")
 

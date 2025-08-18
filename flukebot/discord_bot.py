@@ -117,7 +117,7 @@ async def llm_chat(message, username, user_nickname, message_content):
         if message.attachments:
             for media in message.attachments:
                 content_type = str(media.content_type).lower()
-                print(content_type)
+                # print(content_type)
                 attachment_url = media.url if content_type in ("image/png", "image/jpeg", "image/webp") else None
                 # Unhandled formats will give  (status code: 500) from the bot
                 attachments = message.attachments

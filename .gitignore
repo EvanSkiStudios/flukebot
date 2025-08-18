@@ -3,7 +3,11 @@
 /workspace.xml
 
 flukebot/.env
-/flukebot/memories
+/flukebot/memories/meet_the_robinsons
+/flukebot/memories/users
+/flukebot/memories/__pycache__
 /flukebot/__pycache__
 /flukebot/.idea
 /flukebot/images
+flukebot/memories/__consent_users.json
+flukebot/memories/__things_you_know.json
