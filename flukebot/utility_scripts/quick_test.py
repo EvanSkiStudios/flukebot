@@ -1,6 +1,6 @@
 import asyncio
 
-from ollamaherder import build_system_prompt
+from deprecated.ollamaherder import build_system_prompt
 
 
 async def main():

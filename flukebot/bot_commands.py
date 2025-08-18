@@ -1,12 +1,7 @@
-import asyncio
 import json
 import os
 import random
 import discord
-
-from long_term_memory import convo_delete_history
-from ollamaherder import llm_current_user_conversation_history
-from utility_scripts.quick_llm import quick_LLM
 
 
 def command_set_activity(current_activity=None):
@@ -66,6 +61,9 @@ async def command_status(client, ctx, arg):
         return
 
     print(f"Changed Status to: {activity.type} {activity.name}")
+
+def convo_delete_history():
+    print("wwhoopersr")
 
 
 async def command_history(ctx, arg):
