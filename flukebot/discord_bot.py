@@ -2,7 +2,7 @@ import asyncio
 import os
 import discord
 
-import bot_commands as bc
+import discord_commands as bc
 
 from discord.ext import commands
 from dotenv import load_dotenv

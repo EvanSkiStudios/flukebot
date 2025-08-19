@@ -2,15 +2,14 @@ import asyncio
 import json
 from pathlib import Path
 
-import ollama
-from ollama import Client, chat, ChatResponse, AsyncClient
+from ollama import Client, chat
 
 from Tools.gemma_vision import download_image, image_cleanup
 from flukebot_ruleset import flukebot_personality
 from memories.custom_facts import random_factoids
 from memories.meet_the_robinsons import fetch_chatter_description
 from memories.message_memory_manager import gather_current_user_message_history, stash_user_conversation_history
-from utility import current_date_time, split_response
+from utility_scripts.utility import current_date_time, split_response
 
 # import from ruleset
 flukebot_rules = flukebot_personality

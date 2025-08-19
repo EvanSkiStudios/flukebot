@@ -20,8 +20,6 @@ def gather_relevant_history(user_name, user_response):
     return relevant_messages
 
 
-# todo -- add back history delete command
-
 async def gather_current_user_message_history(user_name):
     users_dir = os.path.join(memories_dir, 'users')
     user_folder = os.path.join(users_dir, user_name)
@@ -83,3 +81,17 @@ def stash_user_conversation_history(user_name, conversation_data):
         with open(user_conversation_memory_file, "w") as f:
             json.dump(conversation_data, f)
         f.close()
+
+
+def remove_user_conversation_file(user_name):
+    users_dir = os.path.join(memories_dir, 'users')
+    user_folder = os.path.join(users_dir, user_name)
+
+    user_conversation_memory_file = os.path.join(user_folder, f"{user_name}.json")
+
+    if os.path.exists(user_conversation_memory_file):
+        os.remove(user_conversation_memory_file)
+        return 1
+    else:
+        return -1
+

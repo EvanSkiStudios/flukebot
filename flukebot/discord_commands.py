@@ -3,6 +3,8 @@ import os
 import random
 import discord
 
+from memories.message_memory_manager import remove_user_conversation_file
+
 
 def command_set_activity(current_activity=None):
     possible_activities = [
@@ -12,7 +14,7 @@ def command_set_activity(current_activity=None):
         discord.Activity(type=discord.ActivityType.watching, name="Shrek 7"),
         discord.CustomActivity(name="Writing Mercanski fanfiction", emoji=' '),
         discord.CustomActivity(name="Cheering Alyssa on!", emoji='🥳'),
-        discord.CustomActivity(name="<coroutine object FlukeBot at 0x000001DE9B6F6240>", emoji=' '),
+        discord.CustomActivity(name="<coroutine object FlukeBot at 0x000001AB2C3D4567>", emoji=' '),
         None  # Clear status
     ]
 
@@ -62,8 +64,10 @@ async def command_status(client, ctx, arg):
 
     print(f"Changed Status to: {activity.type} {activity.name}")
 
-def convo_delete_history():
-    print("wwhoopersr")
+
+def convo_delete_history(username):
+    result = remove_user_conversation_file(username)
+    return result
 
 
 async def command_history(ctx, arg):
