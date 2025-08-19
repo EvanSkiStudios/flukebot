@@ -5,6 +5,12 @@ import json
 import ollama
 
 
+def faiss_index_delete(user_name):
+    # todo - called from message memory manager remove_user_conversation_file
+    # will remove faiss database
+    return None
+
+
 def build_or_load_faiss_index(user_name):
     json_file_name = str(user_name) + '.json'
 
@@ -195,7 +201,7 @@ def get_relevant_messages(query, index, metadata):
 def Test_database():
     faiss_data = build_or_load_faiss_index('evanski_')
 
-    query = "what is your favorite food?"
+    query = "this is only a test"
     memories = get_relevant_messages(query, faiss_data["index"], faiss_data["metadata"])
 
     print(memories)
